@@ -179,6 +179,8 @@ if [ "$GENDATA" = true ]; then
 	"$DBGENABSPATH/dbgen" -s $SCALE -f -v -T $TABLENAME &
     done
     wait_jobs
+    # It seems that it is neccessary to convert the files before importing them
+    for i in `ls *.tbl`; do sed 's/|$//' $i > $i; echo "Converting $i ..."; done;
     echo "TPC-H data *.tbl files generated at $TPCHTMP"
 fi
 
@@ -197,7 +199,7 @@ TBLFILESNUM=`find . -maxdepth 1 -type f -name '*.tbl' | wc -l`
 if [ "$TBLFILESNUM" -eq "0" ]; then
     die "No *.tbl files found"
 fi
-for f in *.csv; do
+for f in *.tbl; do
     # bf is f without .tbl extensions. Since unquoted names are case insensitive
     # in Postgres, bf is basically a table name.
     bf="$(basename $f .tbl)"
@@ -211,9 +213,11 @@ done
 wait_jobs
 echo "TPC-H tables are populated with data"
 
-# Create primary and foreign keys
 $PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "dss.ri"
 echo "primary and foreign keys added"
+
+rm -rf "$TPCHTMP"
+echo "tpch tmp directory removed"
 
 echo "scale is $SCALE"
 echo "pginstdir is $PGINSTDIR"
