@@ -17,7 +17,7 @@ show_help() {
       * Remove generated data, if needed
       * Create indexes, if needed
       * Reset Postgres state (vacuum-analyze-checkpoint)
-      * Generate the queries and put them to PGDATADIR/queries
+      * Generate the queries and put them to ./queries
 
     Options
     The first six options are read from $CONFIGFILE file, but you can overwrite
@@ -86,11 +86,16 @@ if [ -z "$PGDATADIR" ]; then die "pgdatadir is empty"; fi
 if [ -z "$TPCHTMP" ]; then die "tpchtmp is empty"; fi
 if [ -z "$PGPORT" ]; then die "pgport is empty"; fi
 if [ -z "$TPCHDBNAME" ]; then die "tpchdbname is empty"; fi
-if [[ "$GENDATA"=false && -z "$DBGENPATH" ]]; then die "dbgenpath is empty"; fi
+# We need dbgenpath even if we don't generate *.tbl files because we always
+# generate queries
+if [-z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
 
 # directory with this script
 BASEDIR=`dirname "$(readlink -f "$0")"`
 PGBINDIR="${PGINSTDIR}/bin"
+cd "$BASEDIR"
+cd "$DBGENPATH" || die "dbgen directory not found"
+DBGENABSPATH=`readlink -f "$(pwd)"`
 
 # ================== Check it's ok to run pgsql server =========================
 # Check for the running Postgres; exit if there is any on the given port
@@ -156,10 +161,7 @@ if [ $DEBUG_ASSERTIONS = 1 ] ; then die "Option debug_assertions is enabled"; fi
 
 # generate *.tbl files, if needed
 if [ "$GENDATA" = true ]; then
-    cd "$BASEDIR"
-    cd "$DBGENPATH" || die "dbgen directory not found"
     make -j4 # build dbgen
-    DBGENABSPATH=`readlink -f "$(pwd)"`
     if ! [ -x "$DBGENABSPATH/dbgen" ] || ! [ -x "$DBGENABSPATH/qgen" ]; then
 	die "Can't find dbgen or qgen.";
     fi
@@ -216,13 +218,61 @@ echo "TPC-H tables are populated with data"
 $PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "dss.ri"
 echo "primary and foreign keys added"
 
-rm -rf "$TPCHTMP"
-echo "tpch tmp directory removed"
+if [ "$REMOVEGENDATA" = true ]; then
+    cd && rm -rf "$TPCHTMP"
+    echo "tpch tmp directory removed"
+fi
 
-echo "scale is $SCALE"
-echo "pginstdir is $PGINSTDIR"
-echo "pgdatadir is $PGDATADIR"
-echo "TPCHTMP is $TPCHTMP"
-echo "PGPORT is $PGPORT"
-echo "TPCHDBNAME is $TPCHDBNAME"
-echo "GENDATA is $GENDATA"
+if [ "$CREATEINDEXES" = true ]; then
+    declare -a INDEXCMDS=(
+	# Pg does not create indexed on foreign keys, create them manually
+	"CREATE INDEX i_n_regionkey ON nation (n_regionkey);"	#& #unused on 1GB
+	"CREATE INDEX i_s_nationkey ON supplier (s_nationkey);"	#&
+	"CREATE INDEX i_c_nationkey ON customer (c_nationkey);"	#&
+	"CREATE INDEX i_ps_suppkey ON partsupp (ps_suppkey);"	#&
+	"CREATE INDEX i_ps_partkey ON partsupp (ps_partkey);"	#&
+	"CREATE INDEX i_o_custkey ON orders (o_custkey);"	#&
+	"CREATE INDEX i_l_orderkey ON lineitem (l_orderkey);"	#&
+	"CREATE INDEX i_l_suppkey_partkey ON lineitem (l_partkey, l_suppkey);"	#&
+        # other indexes
+	"CREATE INDEX i_l_shipdate ON lineitem (l_shipdate);"	#&
+	"CREATE INDEX i_l_partkey ON lineitem (l_partkey);"	#&
+	"CREATE INDEX i_l_suppkey ON lineitem (l_suppkey);"	#&
+	"CREATE INDEX i_l_receiptdate ON lineitem (l_receiptdate);"	#&
+	"CREATE INDEX i_l_orderkey_quantity ON lineitem (l_orderkey, l_quantity);"	#&
+	"CREATE INDEX i_o_orderdate ON orders (o_orderdate);"	#&
+	"CREATE INDEX i_l_commitdate ON lineitem (l_commitdate);"	#& #unused on 1GB
+    )
+    for cmd in "${INDEXCMDS[@]}"; do
+	echo "Running $cmd"
+	$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "$cmd"
+    done
+    wait_jobs
+    echo "Indexes created"
+else
+    echo "Indexes will not be created"
+fi
+
+# Always analyze after bulk-loading; when hacking Postgres, typically Postgres
+# is run with autovacuum turned off.
+echo "Running vacuum freeze analyze checkpoint..."
+$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "vacuum freeze"
+$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "analyze"
+# Checkpoint, so we have a "clean slate". Just in-case.
+$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "checkpoint"
+
+# Generate queries and put them to $BASEDIR/queries/qxx.sql, where xx is a number
+# of the query. Also generates qxx.explain.sql and qxx.analyze.sql.
+cd "$DBGENABSPATH"
+for i in $(seq 1 22); do
+    ii=$(printf "%02d" $i)
+    mkdir -p "$BASEDIR/queries"
+    # DSS_QUERY points to dir with queries that qgen uses to build the actual
+    # queries
+    DSS_QUERY=queries ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
+    sed 's/^select/explain select/' "$BASEDIR/queries/q${ii}.sql" > \
+	"$BASEDIR/queries/q${ii}.explain.sql"
+    sed 's/^select/explain analyze select/' "$BASEDIR/queries/q${ii}.sql" > \
+	"$BASEDIR/queries/q${ii}.analyze.sql"
+done
+echo "Queries generated"
