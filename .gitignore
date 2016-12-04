@@ -1,4 +1,5 @@
 pgtpch.conf
+pgtpch_last.conf
 postgresql.conf
 dbgen-*/
 

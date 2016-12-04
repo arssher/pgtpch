@@ -1,18 +1,4 @@
-# Parse config file written in format 'optname = optvalue'
-CONFIGFILE=pgtpch.conf
-
-if [ -f $CONFIGFILE ]; then
-    echo "Reading $CONFIGFILE..."
-    SCALE=$(awk '/^scale/{print $3}' "${CONFIGFILE}")
-    PGINSTDIR=$(awk '/^pginstdir/{print $3}' "${CONFIGFILE}")
-    PGDATADIR=$(awk '/^pgdatadir/{print $3}' "${CONFIGFILE}")
-    TPCHTMP=$(awk '/^tpchtmp/{print $3}' "${CONFIGFILE}")
-    PGPORT=$(awk '/^pgport/{print $3}' "${CONFIGFILE}")
-    TPCHDBNAME=$(awk '/^tpchdbname/{print $3}' "${CONFIGFILE}")
-    DBGENPATH=$(awk '/^dbgenpath/{print $3}' "${CONFIGFILE}")
-else
-    echo "Config file $CONFIGFILE doesn't exist and will not be read"
-fi
+LASTCONF="pgtpch_last.conf"
 
 # =========================== Functions ======================================
 # Calculates elapsed time. Use it like this:
@@ -63,6 +49,7 @@ postgres_start() {
 	echo "Waiting for the Postgres server to start"
 	sleep 2
     done
+    sleep 3 # To avoid 'the database system is starting up'
     echo "Postgres server started"
 }
 

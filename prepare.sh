@@ -20,7 +20,7 @@ show_help() {
       * Generate the queries and put them to ./queries
 
     Options
-    The first six options are read from $CONFIGFILE file, but you can overwrite
+    The first six options are read from $CONFIGFILE file, but you can override
     them in command line args. See their meaning in that file. The rest are:
 
     -e don't generate *.tbl files, use the existing ones
@@ -31,6 +31,8 @@ EOF
     exit 0
 }
 
+CONFIGFILE=pgtpch.conf # read_conf.sh will read config from here
+source read_conf.sh
 source common.sh
 
 GENDATA=true
@@ -88,7 +90,7 @@ if [ -z "$PGPORT" ]; then die "pgport is empty"; fi
 if [ -z "$TPCHDBNAME" ]; then die "tpchdbname is empty"; fi
 # We need dbgenpath even if we don't generate *.tbl files because we always
 # generate queries
-if [-z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
+if [ -z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
 
 # directory with this script
 BASEDIR=`dirname "$(readlink -f "$0")"`
@@ -115,7 +117,7 @@ fi
 
 # ========================== Preparing DB =========================
 # Current time
-t=$(timer)
+CURRTIME=$(timer)
 
 # create database cluster
 rm -r "$PGDATADIR"
@@ -273,3 +275,11 @@ for i in $(seq 1 22); do
 	"$BASEDIR/queries/q${ii}.analyze.sql"
 done
 echo "Queries generated"
+
+# save config to be read by run.sh
+cd "$BASEDIR"
+echo "scale = $SCALE" > "$LASTCONF"
+echo "Config dumped"
+
+printf 'Preparing elapsed time: %s\n' $(timer $CURRTIME)
+postgres_stop

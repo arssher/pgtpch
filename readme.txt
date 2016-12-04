@@ -13,3 +13,5 @@ You should then specify it either in pgtpch.config or as an arg to scripts.
 
 prepare.sh creates database cluster with table containing TPC-H data and
 generates the queries. See ./prepare.sh -h for usage.
+
+TODO: drop_caches?

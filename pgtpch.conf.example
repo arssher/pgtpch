@@ -1,3 +1,6 @@
+# Config format is 'key = value'
+# Lines starting with '#' are comments
+
 # Scale, real number passed to dbgen. Roughly equivalent to GBs of data.
 scale = 0.1
 
