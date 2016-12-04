@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -e
-
 # Parse config file written in format 'optname = optvalue'
 CONFIGFILE=pgtpch.conf
 

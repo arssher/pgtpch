@@ -1,5 +1,5 @@
 pgtpch.conf
-postgresq.conf
+postgresql.conf
 dbgen-*/
 
 queries/
