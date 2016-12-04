@@ -11,7 +11,7 @@ show_help() {
       * Merge configuration from postgresql.conf with default configuration at
       	pgdatadir/postgresql.conf, if the former exists
       * Run the cluster on port pgport
-      * Generate *.tbl files with TPC-H data, if needed, using dbgenpath
+      * Generate *.tbl files with TPC-H data, if needed
       * Create database with TPC-H tables named tpchdbname
       * Fill this tables with generated (or existing) data
       * Remove generated data, if needed
@@ -24,7 +24,7 @@ show_help() {
     them in command line args. See their meaning in that file. The rest are:
 
     -e don't generate *.tbl files, use the existing ones
-    -r remove generated *.tbl files after use, the are not removed by default
+    -r remove generated files after use, the are not removed by default
     -x don't create indexes, they are created by default
     -h display this help and exit
 EOF
@@ -124,6 +124,8 @@ if [ -f "$BASEDIR/postgresql.conf" ]; then
     # grep removes all empty lines
     # awk uses as a separator '=' with any spaces around it. It remembers
     # settings in an array, and prints the setting only if it is not a duplicate.
+    # in fact, we don't need all this stuff because Postgres will use the last
+    # read setting anyway...
     cat "$BASEDIR/postgresql.conf" "$PGDATADIR/postgresql.conf" |
 	sed 's/\#.*//' |
 	grep -v -E '^[[:space:]]*$' |
@@ -136,7 +138,6 @@ fi
 
 # Start a new instance of Postgres
 postgres_start
-exit 0
 
 # create db with this user's name to give access
 $PGBINDIR/createdb -h /tmp -p $PGPORT `whoami` --encoding=UTF-8 --locale=C;
@@ -157,6 +158,7 @@ if [ $DEBUG_ASSERTIONS = 1 ] ; then die "Option debug_assertions is enabled"; fi
 if [ "$GENDATA" = true ]; then
     cd "$BASEDIR"
     cd "$DBGENPATH" || die "dbgen directory not found"
+    make -j4 # build dbgen
     DBGENABSPATH=`readlink -f "$(pwd)"`
     if ! [ -x "$DBGENABSPATH/dbgen" ] || ! [ -x "$DBGENABSPATH/qgen" ]; then
 	die "Can't find dbgen or qgen.";
@@ -164,8 +166,12 @@ if [ "$GENDATA" = true ]; then
 
     mkdir -p "$TPCHTMP" || die "Failed to create temporary directory: '$TPCHTMP'"
     cd "$TPCHTMP"
+    # needed by ./dbgen
     cp "$DBGENABSPATH/dists.dss" . || die "dists.dss not found"
-    cp "$DBGENABSPATH/dss.ddl" . || die "dss.ddl not found"
+    cp "$DBGENABSPATH/dss.ddl" . || die "dss.ddl not found" # table definitions
+    # foreign & primary keys
+    cp "$DBGENABSPATH/dss.ri" . || die "dss.ri not found"
+
     # Create table files separately to have better IO throughput
     # -v is verbose, -f for overwrtiting existing files, -T <letter> is
     # "generate only table <letter>"
@@ -173,7 +179,7 @@ if [ "$GENDATA" = true ]; then
 	"$DBGENABSPATH/dbgen" -s $SCALE -f -v -T $TABLENAME &
     done
     wait_jobs
-    echo "TPC-H data \*.tbl files generated at $TPCHTMP"
+    echo "TPC-H data *.tbl files generated at $TPCHTMP"
 fi
 
 $PGBINDIR/createdb -h /tmp -p $PGPORT $TPCHDBNAME --encoding=UTF-8 --locale=C
@@ -183,10 +189,31 @@ $PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "comment on database
 $TPCHDBNAME is 'TPC-H data, created at $TIME'"
 echo "TPC-H database created"
 
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $DB_NAME < "$TPCHTMP/dss.ddl"
+$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "$TPCHTMP/dss.ddl"
 echo "TPCH-H tables created"
 
+cd "$TPCHTMP"
+TBLFILESNUM=`find . -maxdepth 1 -type f -name '*.tbl' | wc -l`
+if [ "$TBLFILESNUM" -eq "0" ]; then
+    die "No *.tbl files found"
+fi
+for f in *.csv; do
+    # bf is f without .tbl extensions. Since unquoted names are case insensitive
+    # in Postgres, bf is basically a table name.
+    bf="$(basename $f .tbl)"
+    # We truncate the empty table in the sames transaction to enable Postgres to
+    # safely skip WAL-logging. See
+    # http://www.postgresql.org/docs/current/static/populate.html#POPULATE-PITR
+    echo "truncate $bf;
+    	  COPY $bf FROM '$(pwd)/$f' WITH DELIMITER AS '|'" |
+	$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME &
+done
+wait_jobs
+echo "TPC-H tables are populated with data"
 
+# Create primary and foreign keys
+$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "dss.ri"
+echo "primary and foreign keys added"
 
 echo "scale is $SCALE"
 echo "pginstdir is $PGINSTDIR"

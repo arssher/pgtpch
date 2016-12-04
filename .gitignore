@@ -1,3 +1,10 @@
 pgtpch.conf
 postgresq.conf
-dbgen/
+dbgen-*/
+
+queries/
+
+# dbgen build files
+dbgen/*.o
+dbgen/dbgen
+dbgen/qgen
