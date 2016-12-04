@@ -177,12 +177,10 @@ if [ "$GENDATA" = true ]; then
     # Create table files separately to have better IO throughput
     # -v is verbose, -f for overwrtiting existing files, -T <letter> is
     # "generate only table <letter>"
-    for TABLENAME in c s n r O L P s; do
+    for TABLENAME in c s n r O L P s S; do
 	"$DBGENABSPATH/dbgen" -s $SCALE -f -v -T $TABLENAME &
     done
     wait_jobs
-    # It seems that it is neccessary to convert the files before importing them
-    for i in `ls *.tbl`; do sed 's/|$//' $i > $i; echo "Converting $i ..."; done;
     echo "TPC-H data *.tbl files generated at $TPCHTMP"
 fi
 
