@@ -1,0 +1,6 @@
+checkpoint_timeout = 600s
+shared_buffers = 128GB
+maintenance_work_mem = 1GB
+work_mem = 8GB
+effective_cache_size = 128GB
+default_statistics_target = 5000
