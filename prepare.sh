@@ -244,7 +244,6 @@ if [ "$CREATEINDEXES" = true ]; then
 	"CREATE INDEX i_l_commitdate ON lineitem (l_commitdate);"	#& #unused on 1GB
     )
     for cmd in "${INDEXCMDS[@]}"; do
-	echo "Running $cmd"
 	$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "$cmd"
     done
     wait_jobs
