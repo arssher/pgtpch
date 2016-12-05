@@ -19,3 +19,5 @@ prepare.sh creates database cluster with table containing TPC-H data and
 generates the queries. See ./prepare.sh -h for usage.
 
 run.sh runs the queries, see ./run.sh -h for usage.
+
+Tested only on GNU/Linux, Ubuntu 14.04
