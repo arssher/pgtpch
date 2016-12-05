@@ -30,8 +30,8 @@ show_help() {
 EOF
 }
 
-source common.sh # set CONFIGFILE
-read_conf
+source common.sh
+read_conf "$CONFIGFILE"
 
 GENDATA=true
 REMOVEGENDATA=false

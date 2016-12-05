@@ -3,7 +3,7 @@ pgtpch_last.conf
 postgresql.conf
 dbgen-*/
 
-queries/
+/queries/
 res/
 
 # dbgen build files

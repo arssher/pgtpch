@@ -8,6 +8,7 @@ CONFIGFILE="pgtpch.conf"
 # is used.
 # Files with names containing spaces are not supported at the moment.
 read_conf() {
+    echo "fafa $@"
     # concat all arguments
     CONFFILES=""
     for f in "$@"; do
