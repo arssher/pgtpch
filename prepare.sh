@@ -8,12 +8,12 @@ show_help() {
 
     Prepare Postgres cluster for running TPC-H queries:
       * Create Postgres cluster at pgdatadr via initdb from pginstdir
-      * Merge configuration from postgresql.conf with default configuration at
+      * Add configuration from postgresql.conf to default configuration at
       	pgdatadir/postgresql.conf, if the former exists
       * Run the cluster on port pgport
       * Generate *.tbl files with TPC-H data, if needed
       * Create database with TPC-H tables named tpchdbname
-      * Fill this tables with generated (or existing) data
+      * Fill these tables with generated (or existing) data
       * Remove generated data, if needed
       * Create indexes, if needed
       * Reset Postgres state (vacuum-analyze-checkpoint)
@@ -98,22 +98,6 @@ PGBINDIR="${PGINSTDIR}/bin"
 cd "$BASEDIR"
 cd "$DBGENPATH" || die "dbgen directory not found"
 DBGENABSPATH=`readlink -f "$(pwd)"`
-
-# ================== Check it's ok to run pgsql server =========================
-# Check for the running Postgres; exit if there is any on the given port
-PGPORT_PROCLIST="$(lsof -i tcp:$PGPORT | tail -n +2 | awk '{print $2}')"
-if [[ $(echo "$PGPORT_PROCLIST" | wc -w) -gt 0 ]]; then
-    echo "The following processes have taken port $PGPORT"
-    echo "Please terminate them before running this script"
-    echo
-    for p in $PGPORT_PROCLIST; do ps -o pid,cmd $p; done
-    die ""
-fi
-
-# Check if a Postgres server is running in the same directory
-if server_running; then
-    die "Postgres server is already running in the $PGDATADIR directory.";
-fi
 
 # ========================== Preparing DB =========================
 # Current time

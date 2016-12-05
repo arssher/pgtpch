@@ -35,13 +35,28 @@ wait_jobs() {
     done
 }
 
-# Check server is running. Returns 0 if running.
+# Check server PGBINDIR at PGDATADIR is running. Returns 0 if running.
 server_running() {
     $PGBINDIR/pg_ctl status -D $PGDATADIR | grep "server is running" -q
 }
 
-# Start postgres and save it's pid in PGPID
+# Start postgres PGBINDIR at PGDATADIR on PGPORT and save it's pid in PGPID
 postgres_start() {
+    # Check for the running Postgres; exit if there is any on the given port
+    PGPORT_PROCLIST="$(lsof -i tcp:$PGPORT | tail -n +2 | awk '{print $2}')"
+    if [[ $(echo "$PGPORT_PROCLIST" | wc -w) -gt 0 ]]; then
+	echo "The following processes have taken port $PGPORT"
+	echo "Please terminate them before running this script"
+	echo
+	for p in $PGPORT_PROCLIST; do ps -o pid,cmd $p; done
+	die ""
+    fi
+
+    # Check if a Postgres server is running in the same directory
+    if server_running; then
+	die "Postgres server is already running in the $PGDATADIR directory.";
+    fi
+
     $PGBINDIR/postgres -D "$PGDATADIR" -p $PGPORT &
     PGPID=$!
     sleep 2
@@ -53,7 +68,7 @@ postgres_start() {
     echo "Postgres server started"
 }
 
-# Stop postgres
+# Stop postgres PGBINDIR at PGDATADIR
 postgres_stop() {
     $PGBINDIR/pg_ctl stop -D $PGDATADIR
 }
