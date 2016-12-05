@@ -11,7 +11,8 @@ show_help() {
      info like the scale used while generating data.
      The results will be put to directory ./res/testname-scale. Inside it, a dir
      will be created named qxx, where xx is number of the query, with:
-       * File exectimes.txt with execution times
+       * File exectimes.txt with execution times: first 'warmup' lines are warmup
+         times, the last one is the actual run time.
        * File answer.txt with computed answer
        * File qxx.sql with used query.
 

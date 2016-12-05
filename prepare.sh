@@ -108,18 +108,8 @@ $PGBINDIR/initdb -D "$PGDATADIR" --encoding=UTF-8 --locale=C
 
 # copy postgresql settings
 if [ -f "$BASEDIR/postgresql.conf" ]; then
-    # Merge our config with a default one.
-    # sed removes all the comments started with #
-    # grep removes all empty lines
-    # awk uses as a separator '=' with any spaces around it. It remembers
-    # settings in an array, and prints the setting only if it is not a duplicate.
-    # in fact, we don't need all this stuff because Postgres will use the last
-    # read setting anyway...
-    cat "$BASEDIR/postgresql.conf" "$PGDATADIR/postgresql.conf" |
-	sed 's/\#.*//' |
-	grep -v -E '^[[:space:]]*$' |
-	awk -F' *= *' '!($1 in settings) {settings[$1] = $2; print}' \
-	    > "$PGDATADIR/postgresql.conf"
+    # Postgres uses the last read setting
+    cat "$BASEDIR/postgresql.conf" >> "$PGDATADIR/postgresql.conf"
     echo "Postgres config applied"
 else
     echo "Config file postgresql.conf not found, using the default"
