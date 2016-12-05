@@ -1,4 +1,5 @@
-Simple scripts to run TPC-H benchmarks. Largely based on
+Simple scripts to run TPC-H benchmarks on PostgreSQL.
+Largely based on
 https://github.com/2ndQuadrant/pg-tpch
 
 How to use it:

@@ -36,6 +36,8 @@ queries = 1 2 5
 # Commands to run by Postgres before executing the actual query. For example,
 # you can set formatting here or enable extension.
 # backslash escapes will be interpreted by echo, i.e. \n means newline
+# Note that currently it will run every time we execute the query, not once
+# per test.
 precmd = \\pset expanded\n\\pset format unaligned\n\\pset fieldsep ' '\n
 
 # Number of warmups. Each query is run warmups times first without recording the
