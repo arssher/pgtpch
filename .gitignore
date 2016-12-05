@@ -4,6 +4,7 @@ postgresql.conf
 dbgen-*/
 
 queries/
+res/
 
 # dbgen build files
 dbgen/*.o

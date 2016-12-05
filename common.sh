@@ -1,6 +1,43 @@
 LASTCONF="pgtpch_last.conf"
+CONFIGFILE="pgtpch.conf"
 
 # =========================== Functions ======================================
+
+# Parses config files written in format 'optname = optvalue'
+# Accepts any number of filenames as an argument. The first encountered setting
+# is used.
+# Files with names containing spaces are not supported at the moment.
+read_conf() {
+    # concat all arguments
+    CONFFILES=""
+    for f in "$@"; do
+	CONFFILES="$CONFFILES $f"
+    done
+
+    echo "Reading configs $CONFFILES..."
+    # Now merge the configs
+    # sed removes all the comments started with #
+    # grep removes all empty lines
+    CONFS=`cat $CONFFILES | sed 's/\#.*//' | grep -v -E '^[[:space:]]*$'`
+    # awk uses as a separator '=' with any spaces around it. It remembers
+    # keys in an array, and prints the setting only if it is not a duplicate.
+    CONFS=`echo "$CONFS" | awk -F' *= *' '!($1 in settings) {settings[$1]; print}'`
+
+    SCALE=$(echo "$CONFS" | awk -F' *= *' '/^scale/{print $2}')
+    PGINSTDIR=$(echo "$CONFS" | awk -F' *= *' '/^pginstdir/{print $2}')
+    PGDATADIR=$(echo "$CONFS" | awk -F' *= *' '/^pgdatadir/{print $2}')
+    TPCHTMP=$(echo "$CONFS" | awk -F' *= *' '/^tpchtmp/{print $2}')
+    PGPORT=$(echo "$CONFS" | awk -F' *= *' '/^pgport/{print $2}')
+    TPCHDBNAME=$(echo "$CONFS" | awk -F' *= *' '/^tpchdbname/{print $2}')
+    DBGENPATH=$(echo "$CONFS" | awk -F' *= *' '/^dbgenpath/{print $2}')
+    # values for run.sh only
+    QUERIES=$(echo "$CONFS" | awk -F' *= *' '/^queries/{print $2}')
+    # precmd might contain '=' symbols, so things are different.
+    # \s is whitespace, \K ignores part of line matched before \K.
+    PRECMD=$(echo "$CONFS" | grep --perl-regexp --only-matching '^precmd\s*=\s*\K.*')
+    WARMUPS=$(echo "$CONFS" | awk -F' *= *' '/^warmups/{print $2}')
+}
+
 # Calculates elapsed time. Use it like this:
 # curr_t = $(timer)
 # t_elapsed = $(timer $curr_t)

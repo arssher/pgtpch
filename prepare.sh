@@ -28,12 +28,10 @@ show_help() {
     -x don't create indexes, they are created by default
     -h display this help and exit
 EOF
-    exit 0
 }
 
-CONFIGFILE=pgtpch.conf # read_conf.sh will read config from here
-source read_conf.sh
-source common.sh
+source common.sh # set CONFIGFILE
+read_conf
 
 GENDATA=true
 REMOVEGENDATA=false
@@ -72,7 +70,7 @@ while getopts "s:i:d:t:p:n:g:erxh" opt; do
 	r)
 	    REMOVEGENDATA=true
 	    ;;
-	s)
+	x)
 	    CREATEINDEXES=false
 	    ;;
 	\?)
@@ -252,7 +250,7 @@ for i in $(seq 1 22); do
     mkdir -p "$BASEDIR/queries"
     # DSS_QUERY points to dir with queries that qgen uses to build the actual
     # queries
-    DSS_QUERY=queries ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
+    DSS_QUERY="$DBGENABSPATH/queries" ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
     sed 's/^select/explain select/' "$BASEDIR/queries/q${ii}.sql" > \
 	"$BASEDIR/queries/q${ii}.explain.sql"
     sed 's/^select/explain analyze select/' "$BASEDIR/queries/q${ii}.sql" > \
@@ -262,7 +260,12 @@ echo "Queries generated"
 
 # save config to be read by run.sh
 cd "$BASEDIR"
-echo "scale = $SCALE" > "$LASTCONF"
+rm -f "$LASTCONF"
+echo "scale = $SCALE" >> "$LASTCONF"
+echo "tpchdbname = $TPCHDBNAME" >> "$LASTCONF"
+echo "pginstdir = $PGINSTDIR" >> "$LASTCONF"
+echo "pgdatadir = $PGDATADIR" >> "$LASTCONF"
+echo "pgport = $PGPORT" >> "$LASTCONF"
 echo "Config dumped"
 
 printf 'Preparing elapsed time: %s\n' $(timer $CURRTIME)
