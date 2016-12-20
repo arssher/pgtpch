@@ -125,28 +125,31 @@ if [ -z "$TESTNAME" ]; then die "testname is empty"; fi
 
 PGBINDIR="${PGINSTDIR}/bin"
 if [ "$QUERIES" = "all" ]; then
-    QUERIES=$(seq 1 22)
+    QUERIES=""
+    for QNUM in $(seq 1 22); do
+        ii=$(printf "%02d" $QNUM)
+	QUERIES="$QUERIES q$ii"
+    done
 fi
 
 TESTDIR="$BASEDIR/res/$TESTNAME-$SCALE"
 mkdir -p "$TESTDIR"
-for QNUM in $QUERIES; do
-    echo "Running query: $QNUM"
+for QUERY in $QUERIES; do
+    echo "Running query: $QUERY"
 
-    ii=$(printf "%02d" $QNUM)
-    QUERYRESDIR="$TESTDIR/q${ii}"
+    QUERYRESDIR="$TESTDIR/$QUERY"
     rm -rf "$QUERYRESDIR"
     mkdir -p "$QUERYRESDIR"
     cd "$QUERYRESDIR"
     # here we will put used query
-    touch "q${ii}.sql"
+    touch "$QUERY.sql"
     # put precmd from file, if it exists
     if [[ -n "$PRECMDFILE" ]] && [[ -f "$BASEDIR/$PRECMDFILE" ]]; then
-	cat "$BASEDIR/$PRECMDFILE" >> "q${ii}.sql"
+	cat "$BASEDIR/$PRECMDFILE" >> "$QUERY.sql"
     fi
-    echo -e "$PRECMD" >> "q${ii}.sql"
+    echo -e "$PRECMD" >> "$QUERY.sql"
     # put the query itself
-    cat "$BASEDIR/queries/q${ii}.sql" >> "q${ii}.sql"
+    cat "$BASEDIR/queries/$QUERY.sql" >> "$QUERY.sql"
 
     touch exectime.txt
     postgres_start
@@ -155,7 +158,7 @@ for QNUM in $QUERIES; do
 	echo "Warmup $WNUM..."
 	# `which time` to avoid calling bash builtin
 	`which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-             -U "$PGUSER" <"$QUERYRESDIR/q${ii}.sql" >/dev/null 2>>exectime.txt
+             -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >/dev/null 2>>exectime.txt
 
 	echo "Warmup done"
 	sleep 3
@@ -163,7 +166,7 @@ for QNUM in $QUERIES; do
 
     echo "GO!.."
     `which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-                 -U "$PGUSER" <"$QUERYRESDIR/q${ii}.sql" >answer.txt \
+                 -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >answer.txt \
 		 2>>exectime.txt
     echo "done"
 
