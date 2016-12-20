@@ -3,11 +3,15 @@
 show_help() {
     cat <<EOF
      Usage: bash ${0##*/} [-q queries] [-c precmd] [-f precmd_file] [-w warmups]
-     [-i pginstdir] [-d pgdatadir] [-p pgport] <testname>
+      [-s scale] [-n tpchdbname] [-i pginstdir] [-d pgdatadir] [-p pgport]
+      [-r run_config] <testname>
 
      Run TPC-H queries from ./queries on prepared Postgres cluster, measuring
      duration with 'time'. Script relies on previously run ./prepare.sh to get
-     info like the scale used while generating data.
+     info like the scale used while generating data. However, you can still use
+     existing (not created by prepare.sh) cluster, just set right options
+     yourself.
+
      The results will be put to directory ./res/testname-scale. Inside it, a dir
      will be created named qxx, where xx is number of the query, with:
        * File exectimes.txt with execution times: first 'warmup' lines are warmup
@@ -29,9 +33,14 @@ show_help() {
      -w warmups
         number of warmups; if not set it is read from
 	pgtpch.conf, see description in pgtpch.conf.example
-     pginstdir, pgdatadir, pgport are all set by default to the values used last
-       time by ./prepare.sh, but you can override them here.
      -h display this help and exit
+
+     scale, tpchdbname, pginstdir, pgdatadir, pgport are all set as follows:
+       * If prepare.sh was run, it will dump it's conf to pgtpch_last.conf, and
+         we read here this file
+       * If it doesn't exist, we try to read configs from pgtpch.conf
+       * Finally, you can set them as a command line args
+
      testname
 	name of test, part of result's directory name
 
@@ -41,10 +50,14 @@ EOF
 }
 
 source common.sh
-# read PRECMD, QUIERIES from CONFIGFILE, and SCALE, TPCHDBNAME, PGINSTDIR,
+# try to read PRECMD, QUIERIES from CONFIGFILE, and SCALE, TPCHDBNAME, PGINSTDIR,
 # PGDATADIR, PGPORT from LASTCONF, saved there by ./prepare.sh
 BASEDIR=`dirname "$(readlink -f "$0")"` # directory with this script
-read_conf "$BASEDIR/$CONFIGFILE" "$BASEDIR/$LASTCONF"
+if [ -f "$BASEDIR/$LASTCONF" ]; then
+    read_conf "$BASEDIR/$LASTCONF" "$BASEDIR/$CONFIGFILE"
+else
+    read_conf "$BASEDIR/$CONFIGFILE"
+fi
 
 OPTIND=1
 while getopts "q:c:f:w:i:d:p:h" opt; do
@@ -65,6 +78,13 @@ while getopts "q:c:f:w:i:d:p:h" opt; do
 	w)
 	    WARMUPS="$OPTARG"
 	    ;;
+	s)
+	    SCALE="$OPTARG"
+	    ;;
+	n)
+	    TPCHDBNAME="$OPTARG"
+	    ;;
+
 	i)
 	    PGINSTDIR="$OPTARG"
 	    ;;
