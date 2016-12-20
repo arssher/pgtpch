@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e
 
 show_help() {
     cat <<EOF
