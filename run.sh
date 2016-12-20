@@ -3,8 +3,8 @@ set -e
 
 show_help() {
     cat <<EOF
-     Usage: bash ${0##*/} [-q queries] [-c precmd] [-w warmups] [-i pginstdir]
-     [-d pgdatadir] [-p pgport] <testname>
+     Usage: bash ${0##*/} [-q queries] [-c precmd] [-f precmd_file] [-w warmups]
+     [-i pginstdir] [-d pgdatadir] [-p pgport] <testname>
 
      Run TPC-H queries from ./queries on prepared Postgres cluster, measuring
      duration with 'time'. Script relies on previously run ./prepare.sh to get
@@ -23,6 +23,10 @@ show_help() {
      -c precmd
         command to run before executing query; if not set it is read from
 	pgtpch.conf, see description in pgtpch.conf.example
+     -f precmd_file
+     	another possibility to run some commands before executing query. The
+ 	whole file precmd_file will be read and executed before the actual query.
+	File path must be relative to this project root.
      -w warmups
         number of warmups; if not set it is read from
 	pgtpch.conf, see description in pgtpch.conf.example
@@ -44,7 +48,7 @@ BASEDIR=`dirname "$(readlink -f "$0")"` # directory with this script
 read_conf "$BASEDIR/$CONFIGFILE" "$BASEDIR/$LASTCONF"
 
 OPTIND=1
-while getopts "q:c:w:i:d:p:h" opt; do
+while getopts "q:c:f:w:i:d:p:h" opt; do
     case $opt in
 	h)
 	    show_help
@@ -55,6 +59,9 @@ while getopts "q:c:w:i:d:p:h" opt; do
 	    ;;
 	c)
 	    PRECMD="$OPTARG"
+	    ;;
+	f)
+	    PRECMDFILE="$OPTARG"
 	    ;;
 	w)
 	    WARMUPS="$OPTARG"
@@ -110,6 +117,10 @@ for QNUM in $QUERIES; do
     cd "$QUERYRESDIR"
     # here we will put used query
     touch "q${ii}.sql"
+    # put precmd from file, if it exists
+    if [[ -n "$PRECMDFILE" ]] && [[ -f "$BASEDIR/$PRECMDFILE" ]]; then
+	cat "$BASEDIR/$PRECMDFILE" >> "q${ii}.sql"
+    fi
     echo -e "$PRECMD" >> "q${ii}.sql"
     # put the query itself
     cat "$BASEDIR/queries/q${ii}.sql" >> "q${ii}.sql"

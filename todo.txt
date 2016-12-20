@@ -1,2 +1,3 @@
 drop_caches?
 change conf while running?
+read_conf fails if key not found

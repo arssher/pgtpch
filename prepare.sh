@@ -4,7 +4,7 @@ set -e
 show_help() {
     cat <<EOF
     Usage: bash ${0##*/} [-s scale] [-i pginstdir] [-d pgdatadir] [-t tpchtmp]
-    [-p pgport] [-n tpchdbname] [-g dbgenpath] [-e] [-x] [-h]
+    [-p pgport] [-n tpchdbname] [-g dbgenpath] [-e] [-x] [-h] [-a]
 
     Prepare Postgres cluster for running TPC-H queries:
       * Create Postgres cluster at pgdatadr via initdb from pginstdir
@@ -26,6 +26,8 @@ show_help() {
     -e don't generate *.tbl files, use the existing ones
     -r remove generated files after use, the are not removed by default
     -x don't create indexes, they are created by default
+    -a disable sanity checks: using Postgres built with assertions and
+       wal_level_minimal
     -h display this help and exit
 EOF
 }
@@ -36,8 +38,9 @@ read_conf "$CONFIGFILE"
 GENDATA=true
 REMOVEGENDATA=false
 CREATEINDEXES=true
+SANITYCHECKS=true
 OPTIND=1
-while getopts "s:i:d:t:p:n:g:erxh" opt; do
+while getopts "s:i:d:t:p:n:g:erxah" opt; do
     case $opt in
 	h)
 	    show_help
@@ -73,6 +76,9 @@ while getopts "s:i:d:t:p:n:g:erxh" opt; do
 	x)
 	    CREATEINDEXES=false
 	    ;;
+	a)
+	    SANITYCHECKS=false
+	    ;;
 	\?)
 	    show_help >&2
 	    exit 1
@@ -102,7 +108,7 @@ DBGENABSPATH=`readlink -f "$(pwd)"`
 CURRTIME=$(timer)
 
 # create database cluster
-rm -r "$PGDATADIR"
+rm -rf "$PGDATADIR"
 mkdir -p "$PGDATADIR"
 $PGBINDIR/initdb -D "$PGDATADIR" --encoding=UTF-8 --locale=C
 
@@ -127,11 +133,13 @@ pg_settings where name in('debug_assertions', 'wal_level',
 'checkpoint_segments', 'shared_buffers', 'wal_buffers', 'fsync',
 'maintenance_work_mem', 'checkpoint_completion_target', 'max_connections');"
 
-WAL_LEVEL_MINIMAL=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show wal_level' -t | grep minimal | wc -l`
-DEBUG_ASSERTIONS=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show debug_assertions' -t | grep on | wc -l`
-if [ $WAL_LEVEL_MINIMAL != 1 ] ; then die "Postgres wal_level is not set to
-minimal; 'Elide WAL traffic' optimization cannot be used"; fi
-if [ $DEBUG_ASSERTIONS = 1 ] ; then die "Option debug_assertions is enabled"; fi
+if [ "$SANITYCHECKS" = true ]; then
+    WAL_LEVEL_MINIMAL=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show wal_level' -t | grep minimal | wc -l`
+    if [ $WAL_LEVEL_MINIMAL != 1 ] ; then die "Postgres wal_level is not set to
+    minimal; 'Elide WAL traffic' optimization cannot be used"; fi
+    DEBUG_ASSERTIONS=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show debug_assertions' -t | grep on | wc -l`
+    if [ $DEBUG_ASSERTIONS = 1 ] ; then die "Option debug_assertions is enabled"; fi
+fi
 
 # generate *.tbl files, if needed
 if [ "$GENDATA" = true ]; then
@@ -260,3 +268,12 @@ echo "Config dumped"
 
 printf 'Preparing elapsed time: %s\n' $(timer $CURRTIME)
 postgres_stop
+
+# copy postgresql additional settings
+if [ -f "$BASEDIR/postgresql_after_prepare.conf" ]; then
+    # Postgres uses the last read setting
+    cat "$BASEDIR/postgresql_after_prepare.conf" >> "$PGDATADIR/postgresql.conf"
+    echo "Postgres additional config applied"
+else
+    echo "Config file postgresql_after_prepare.conf not found, using the default"
+fi
