@@ -15,9 +15,13 @@ It is recommended to run
  echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
 to disable transparent huge pages.
 
-prepare.sh creates database cluster with table containing TPC-H data and
-generates the queries. See ./prepare.sh -h for usage.
+Each script has "./script -h" help
 
-run.sh runs the queries, see ./run.sh -h for usage.
+prepare.sh creates database cluster with table containing TPC-H data and
+generates the queries.
+
+run.sh runs the queries.
+
+gen_queries.h generates the queries.
 
 Tested only on GNU/Linux, Ubuntu 14.04

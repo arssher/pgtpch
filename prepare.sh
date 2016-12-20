@@ -239,21 +239,7 @@ $PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "analyze"
 # Checkpoint, so we have a "clean slate". Just in-case.
 $PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "checkpoint"
 
-# Generate queries and put them to $BASEDIR/queries/qxx.sql, where xx is a number
-# of the query. Also generates qxx.explain.sql and qxx.analyze.sql.
-cd "$DBGENABSPATH"
-for i in $(seq 1 22); do
-    ii=$(printf "%02d" $i)
-    mkdir -p "$BASEDIR/queries"
-    # DSS_QUERY points to dir with queries that qgen uses to build the actual
-    # queries
-    DSS_QUERY="$DBGENABSPATH/queries" ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
-    sed 's/^select/explain select/' "$BASEDIR/queries/q${ii}.sql" > \
-	"$BASEDIR/queries/q${ii}.explain.sql"
-    sed 's/^select/explain analyze select/' "$BASEDIR/queries/q${ii}.sql" > \
-	"$BASEDIR/queries/q${ii}.analyze.sql"
-done
-echo "Queries generated"
+gen_queries
 
 # save config to be read by run.sh
 cd "$BASEDIR"

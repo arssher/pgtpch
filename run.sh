@@ -4,7 +4,7 @@ show_help() {
     cat <<EOF
      Usage: bash ${0##*/} [-q queries] [-c precmd] [-f precmd_file] [-w warmups]
       [-s scale] [-n tpchdbname] [-i pginstdir] [-d pgdatadir] [-p pgport]
-      [-r run_config] <testname>
+      [-U pguser] <testname>
 
      Run TPC-H queries from ./queries on prepared Postgres cluster, measuring
      duration with 'time'. Script relies on previously run ./prepare.sh to get
@@ -35,11 +35,13 @@ show_help() {
 	pgtpch.conf, see description in pgtpch.conf.example
      -h display this help and exit
 
-     scale, tpchdbname, pginstdir, pgdatadir, pgport are all set as follows:
+     scale, tpchdbname, pginstdir, pgdatadir, pgport, pguser are all set as
+     follows:
        * If prepare.sh was run, it will dump it's conf to pgtpch_last.conf, and
          we read here this file
        * If it doesn't exist, we try to read configs from pgtpch.conf
        * Finally, you can set them as a command line args
+     FIXME: pguser is not yet implemented in prepare.sh
 
      testname
 	name of test, part of result's directory name
@@ -60,7 +62,7 @@ else
 fi
 
 OPTIND=1
-while getopts "q:c:f:w:i:d:p:h" opt; do
+while getopts "q:c:f:w:i:d:p:U:h" opt; do
     case $opt in
 	h)
 	    show_help
@@ -84,7 +86,6 @@ while getopts "q:c:f:w:i:d:p:h" opt; do
 	n)
 	    TPCHDBNAME="$OPTARG"
 	    ;;
-
 	i)
 	    PGINSTDIR="$OPTARG"
 	    ;;
@@ -93,6 +94,9 @@ while getopts "q:c:f:w:i:d:p:h" opt; do
 	    ;;
 	p)
 	    PGPORT="$OPTARG"
+	    ;;
+	U)
+	    PGUSER="$OPTARG"
 	    ;;
 	\?)
 	    echo "Unknown option"
@@ -151,7 +155,7 @@ for QNUM in $QUERIES; do
 	echo "Warmup $WNUM..."
 	# `which time` to avoid calling bash builtin
 	`which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-             <"$QUERYRESDIR/q${ii}.sql" >/dev/null 2>>exectime.txt
+             -U "$PGUSER" <"$QUERYRESDIR/q${ii}.sql" >/dev/null 2>>exectime.txt
 
 	echo "Warmup done"
 	sleep 3
@@ -159,7 +163,8 @@ for QNUM in $QUERIES; do
 
     echo "GO!.."
     `which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-                 <"$QUERYRESDIR/q${ii}.sql" >answer.txt 2>>exectime.txt
+                 -U "$PGUSER" <"$QUERYRESDIR/q${ii}.sql" >answer.txt \
+		 2>>exectime.txt
     echo "done"
 
     postgres_stop

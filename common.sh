@@ -7,6 +7,7 @@ error() {
   else
     echo "Error on or near line ${parent_lineno}; exiting with status ${code}"
   fi
+  postgres_stop
   exit "${code}"
 }
 # on error, print bad line number and exit
@@ -50,6 +51,11 @@ read_conf() {
     # \s is whitespace, \K ignores part of line matched before \K.
     PRECMD=$(echo "$CONFS" | grep --perl-regexp --only-matching '^precmd\s*=\s*\K.*')
     WARMUPS=$(echo "$CONFS" | awk -F' *= *' '/^warmups/{print $2}')
+    PGUSER=$(echo "$CONFS" | awk -F' *= *' '/^pguser/{print $2}')
+
+    if [ -z "$PGUSER" ]; then
+	PGUSER=`whoami`
+    fi
 }
 
 # Calculates elapsed time. Use it like this:
@@ -122,4 +128,24 @@ postgres_start() {
 # Stop postgres PGBINDIR at PGDATADIR
 postgres_stop() {
     $PGBINDIR/pg_ctl stop -D $PGDATADIR
+}
+
+# Generate queries and put them to $BASEDIR/queries/qxx.sql, where xx is a number
+# of the query. Also generates qxx.explain.sql and qxx.analyze.sql.
+# Requires DBGENABSPATH set with path to dbgen
+gen_queries() {
+    cd "$DBGENABSPATH"
+    make -j4 # build dbgen
+    for i in $(seq 1 22); do
+	ii=$(printf "%02d" $i)
+	mkdir -p "$BASEDIR/queries"
+	# DSS_QUERY points to dir with queries that qgen uses to build the actual
+	# queries
+	DSS_QUERY="$DBGENABSPATH/queries" ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
+	sed 's/^select/explain select/' "$BASEDIR/queries/q${ii}.sql" > \
+	    "$BASEDIR/queries/q${ii}.explain.sql"
+	sed 's/^select/explain analyze select/' "$BASEDIR/queries/q${ii}.sql" > \
+	    "$BASEDIR/queries/q${ii}.analyze.sql"
+    done
+    echo "Queries generated"
 }
