@@ -20,7 +20,7 @@ show_help() {
       * Generate the queries, if needed, and put them to ./queries
 
     Options
-    The first six options are read from $CONFIGFILE file, but you can override
+    The first seven options are read from $CONFIGFILE file, but you can override
     them in command line args. See their meaning in that file. The rest are:
 
     -e don't generate *.tbl files, use the existing ones
@@ -104,16 +104,17 @@ if [ -z "$TPCHDBNAME" ]; then die "tpchdbname is empty"; fi
 # generate queries
 if [ -z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
 
-echo "Using Postgres at $PGINSTDIR"
-echo "Using datadir at $PGDATADIR"
-echo "Scale is $SCALE"
-
 # directory with this script
 BASEDIR=`dirname "$(readlink -f "$0")"`
 PGBINDIR="${PGINSTDIR}/bin"
 cd "$BASEDIR"
 cd "$DBGENPATH" || die "dbgen directory not found"
 DBGENABSPATH=`readlink -f "$(pwd)"`
+
+echo "Using Postgres at $PGINSTDIR"
+echo "Using datadir at $PGDATADIR"
+echo "Scale is $SCALE"
+echo "Using dbgen at $DBGENABSPATH"
 
 # ========================== Preparing DB =========================
 # Current time
