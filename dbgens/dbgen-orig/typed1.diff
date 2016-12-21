@@ -1,0 +1,19 @@
+diff --git a/dbgen/dss.ddl b/dbgen/dss.ddl
+index 89efe56..9a014cf 100644
+--- a/dbgen/dss.ddl
++++ b/dbgen/dss.ddl
+@@ -55,10 +55,10 @@ CREATE TABLE LINEITEM ( L_ORDERKEY    INTEGER NOT NULL,
+                              L_PARTKEY     INTEGER NOT NULL,
+                              L_SUPPKEY     INTEGER NOT NULL,
+                              L_LINENUMBER  INTEGER NOT NULL,
+-                             L_QUANTITY    DECIMAL(15,2) NOT NULL,
+-                             L_EXTENDEDPRICE  DECIMAL(15,2) NOT NULL,
+-                             L_DISCOUNT    DECIMAL(15,2) NOT NULL,
+-                             L_TAX         DECIMAL(15,2) NOT NULL,
++                             L_QUANTITY    FLOAT NOT NULL,
++                             L_EXTENDEDPRICE  FLOAT NOT NULL,
++                             L_DISCOUNT    FLOAT NOT NULL,
++                             L_TAX         FLOAT NOT NULL,
+                              L_RETURNFLAG  CHAR(1) NOT NULL,
+                              L_LINESTATUS  CHAR(1) NOT NULL,
+                              L_SHIPDATE    DATE NOT NULL,

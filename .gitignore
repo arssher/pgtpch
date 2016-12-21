@@ -3,12 +3,11 @@ pgtpch_last.conf
 postgresql.conf
 postgresql_after_prepare.conf
 precmd.sql
-dbgen-*/
 
 /queries/
 res/
 
 # dbgen build files
-dbgen/*.o
-dbgen/dbgen
-dbgen/qgen
+*.o
+dbgen
+qgen
