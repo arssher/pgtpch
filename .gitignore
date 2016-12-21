@@ -1,6 +1,8 @@
 pgtpch.conf
 pgtpch_last.conf
 postgresql.conf
+postgresql_after_prepare.conf
+precmd.sql
 dbgen-*/
 
 /queries/

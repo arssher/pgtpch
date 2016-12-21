@@ -47,7 +47,8 @@ show_help() {
 	name of test, part of result's directory name
 
      Example:
-       ./run.sh -q "2 3 4" test
+       ./run.sh -q "ss" -w "2" -c "set enable_reverse_exec_hook to off;" \
+       -f precmd.sql ss_usual
 EOF
 }
 
@@ -131,6 +132,10 @@ if [ "$QUERIES" = "all" ]; then
 	QUERIES="$QUERIES q$ii"
     done
 fi
+
+echo "Using Postgres at $PGINSTDIR"
+echo "Using datadir at $PGDATADIR"
+echo "Scale is $SCALE"
 
 TESTDIR="$BASEDIR/res/$TESTNAME-$SCALE"
 mkdir -p "$TESTDIR"
