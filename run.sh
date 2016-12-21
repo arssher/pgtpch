@@ -63,7 +63,7 @@ else
 fi
 
 OPTIND=1
-while getopts "q:c:f:w:i:d:p:U:h" opt; do
+while getopts "q:c:f:w:s:n:i:d:p:U:h" opt; do
     case $opt in
 	h)
 	    show_help
