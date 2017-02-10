@@ -127,10 +127,10 @@ def run_conf(conf):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rc", default="runconf.json", help="json file with configs to run, see runconf.json.example")
-    parser.parse_args()
+    args = parser.parse_args()
 
     default_conf = parse_default_conf()
-    with open("runconf.json") as f:
+    with open(args.rc) as f:
         confs = json.load(f)
         for conf in confs:
             # roll configuration given in runconf.json over default one on pgtpch.conf

@@ -3,7 +3,7 @@ pgtpch_last.conf
 postgresql.conf
 postgresql_after_prepare.conf
 precmd.sql
-runconf.json
+runconf*.json
 
 /queries/
 res/
