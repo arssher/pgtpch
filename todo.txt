@@ -1,3 +1,4 @@
 drop_caches?
 change conf while running?
 read_conf fails if key not found
+Disabling creating indexes fails, tables are not filled.

@@ -6,10 +6,11 @@ How to use it:
 In short,
    git clone https://github.com/arssher/pgtpch.git
    cd pgtpch
-   cp pgtpch.conf.example pgtpch.conf # configure here
+   cp pgtpch.conf.example pgtpch.conf # configure setup here
    cp postgresql.conf.example postgresql.conf # set Postgres options, if you want
+   cp runconf.json.example runconf.json  # congifure runs here
    ./prepare.sh
-   ./run.sh test
+   ./run.py
 
 It is recommended to run
  echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
@@ -20,8 +21,15 @@ Each script has "./script -h" help
 prepare.sh creates database cluster with table containing TPC-H data and
 generates the queries.
 
-run.sh runs the queries.
-
 gen_queries.h generates the queries.
 
-Tested only on GNU/Linux, Ubuntu 14.04
+run.sh runs the queries.
+
+run.py is wrapper around run.sh with following features:
+  * It allows to specify multiple configurations to run in json file, see
+    runconf.json.example for example;
+  * It calculates mean and confidence interval of all exec times;
+  * It logs everything to stdout and res/testname/log.txt
+Unlike run.sh, one configuration of run.py supports only one query.
+
+Tested only on GNU/Linux, Ubuntu 14.04 and OpenSuse 42.1
