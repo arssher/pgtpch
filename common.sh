@@ -92,12 +92,15 @@ wait_jobs() {
     done
 }
 
-# Check server PGBINDIR at PGDATADIR is running. Returns 0 if running.
+# Check server PGBINDIR at PGDATADIR is running. Returns 0 if running. PGLIBDIR
+# should point to right libs.
 server_running() {
-    $PGBINDIR/pg_ctl status -D $PGDATADIR | grep "server is running" -q
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/pg_ctl status \
+		   -D $PGDATADIR | grep "server is running" -q
 }
 
-# Start postgres PGBINDIR at PGDATADIR on PGPORT and save it's pid in PGPID
+# Start postgres PGBINDIR at PGDATADIR on PGPORT and save it's pid in PGPID.
+# PGLIBDIR should point to right libs.
 postgres_start() {
     # Check for the running Postgres; exit if there is any on the given port
     PGPORT_PROCLIST="$(lsof -i tcp:$PGPORT | tail -n +2 | awk '{print $2}')"
@@ -114,7 +117,8 @@ postgres_start() {
 	die "Postgres server is already running in the $PGDATADIR directory.";
     fi
 
-    $PGBINDIR/postgres -D "$PGDATADIR" -p $PGPORT &
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/postgres \
+		   -D "$PGDATADIR" -p $PGPORT &
     PGPID=$!
     sleep 2
     while ! server_running; do
@@ -126,8 +130,10 @@ postgres_start() {
 }
 
 # Stop postgres PGBINDIR at PGDATADIR
+# PGLIBDIR should point to right libs.
 postgres_stop() {
-    $PGBINDIR/pg_ctl stop -D $PGDATADIR
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/pg_ctl stop \
+		   -D $PGDATADIR
 }
 
 # Generate queries and put them to $BASEDIR/queries/qxx.sql, where xx is a number

@@ -107,6 +107,7 @@ if [ -z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
 # directory with this script
 BASEDIR=`dirname "$(readlink -f "$0")"`
 PGBINDIR="${PGINSTDIR}/bin"
+PGLIBIR="${PGINSTDIR}/lib"
 cd "$BASEDIR"
 cd "$DBGENPATH" || die "dbgen directory not found"
 DBGENABSPATH=`readlink -f "$(pwd)"`
@@ -123,7 +124,8 @@ CURRTIME=$(timer)
 # create database cluster
 rm -rf "$PGDATADIR"
 mkdir -p "$PGDATADIR"
-$PGBINDIR/initdb -D "$PGDATADIR" --encoding=UTF-8 --locale=C
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/initdb -D "$PGDATADIR" \
+	       --encoding=UTF-8 --locale=C
 
 # copy postgresql settings
 if [ -f "$BASEDIR/postgresql.conf" ]; then
@@ -138,19 +140,21 @@ fi
 postgres_start
 
 # create db with this user's name to give access
-$PGBINDIR/createdb -h /tmp -p $PGPORT `whoami` --encoding=UTF-8 --locale=C;
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/createdb -h /tmp \
+	       -p $PGPORT `whoami` --encoding=UTF-8 --locale=C;
 
 echo "Current settings are"
-$PGBINDIR/psql -h /tmp -p $PGPORT -c "select name, current_setting(name) from
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -c "select name, current_setting(name) from
 pg_settings where name in('debug_assertions', 'wal_level',
 'checkpoint_segments', 'shared_buffers', 'wal_buffers', 'fsync',
 'maintenance_work_mem', 'checkpoint_completion_target', 'max_connections');"
 
 if [ "$SANITYCHECKS" = true ]; then
-    WAL_LEVEL_MINIMAL=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show wal_level' -t | grep minimal | wc -l`
+    WAL_LEVEL_MINIMAL=`LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT -c 'show wal_level' -t | grep minimal | wc -l`
     if [ $WAL_LEVEL_MINIMAL != 1 ] ; then die "Postgres wal_level is not set to
     minimal; 'Elide WAL traffic' optimization cannot be used"; fi
-    DEBUG_ASSERTIONS=`$PGBINDIR/psql -h /tmp -p $PGPORT -c 'show debug_assertions' -t | grep on | wc -l`
+    DEBUG_ASSERTIONS=`LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT -c 'show debug_assertions' -t | grep on | wc -l`
     if [ $DEBUG_ASSERTIONS = 1 ] ; then die "Option debug_assertions is enabled"; fi
 fi
 
@@ -179,14 +183,17 @@ if [ "$GENDATA" = true ]; then
     echo "TPC-H data *.tbl files generated at $TPCHTMP"
 fi
 
-$PGBINDIR/createdb -h /tmp -p $PGPORT $TPCHDBNAME --encoding=UTF-8 --locale=C
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/createdb -h /tmp \
+	       -p $PGPORT $TPCHDBNAME --encoding=UTF-8 --locale=C
 if [ $? != 0 ]; then die "Error: Can't proceed without database"; fi
 TIME=`date`
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "comment on database
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME -c "comment on database
 $TPCHDBNAME is 'TPC-H data, created at $TIME'"
 echo "TPC-H database created"
 
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "$TPCHTMP/dss.ddl"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME < "$TPCHTMP/dss.ddl"
 echo "TPCH-H tables created"
 
 cd "$TPCHTMP"
@@ -203,12 +210,14 @@ for f in *.tbl; do
     # http://www.postgresql.org/docs/current/static/populate.html#POPULATE-PITR
     echo "truncate $bf;
     	  COPY $bf FROM '$(pwd)/$f' WITH DELIMITER AS '|'" |
-	$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME &
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp \
+		       -p $PGPORT -d $TPCHDBNAME &
 done
 wait_jobs
 echo "TPC-H tables are populated with data"
 
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME < "dss.ri"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME < "dss.ri"
 echo "primary and foreign keys added"
 
 if [ "$REMOVEGENDATA" = true ]; then
@@ -248,10 +257,13 @@ fi
 # Always analyze after bulk-loading; when hacking Postgres, typically Postgres
 # is run with autovacuum turned off.
 echo "Running vacuum freeze analyze checkpoint..."
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "vacuum freeze"
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "analyze"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME -c "vacuum freeze"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME -c "analyze"
 # Checkpoint, so we have a "clean slate". Just in-case.
-$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "checkpoint"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp -p $PGPORT \
+	       -d $TPCHDBNAME -c "checkpoint"
 
 postgres_stop
 

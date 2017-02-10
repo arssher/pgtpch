@@ -125,6 +125,7 @@ if [ -z "$WARMUPS" ]; then die "warmups is empty"; fi
 if [ -z "$TESTNAME" ]; then die "testname is empty"; fi
 
 PGBINDIR="${PGINSTDIR}/bin"
+PGLIBDIR="${PGINSTDIR}/lib"
 if [ "$QUERIES" = "all" ]; then
     QUERIES=""
     for QNUM in $(seq 1 22); do
@@ -162,17 +163,20 @@ for QUERY in $QUERIES; do
     for WNUM in $(seq 1 $WARMUPS); do
 	echo "Warmup $WNUM..."
 	# `which time` to avoid calling bash builtin
-	`which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-             -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >/dev/null 2>>exectime.txt
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" `which time` -f '%e' \
+		       $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
+		       -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >/dev/null \
+		       2>>exectime.txt
 
 	echo "Warmup done"
 	sleep 3
     done
 
     echo "GO!.."
-    `which time` -f '%e' $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
-                 -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >answer.txt \
-		 2>>exectime.txt
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" `which time` -f '%e' \
+		   $PGBINDIR/psql -h /tmp -p $PGPORT -d "$TPCHDBNAME" \
+                   -U "$PGUSER" <"$QUERYRESDIR/$QUERY.sql" >answer.txt \
+		   2>>exectime.txt
     echo "done"
 
     postgres_stop
