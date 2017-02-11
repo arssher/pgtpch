@@ -6,6 +6,7 @@ import os
 import json
 import pprint
 import argparse
+import datetime
 
 from scipy.stats import t
 from numpy import average, std
@@ -67,6 +68,11 @@ def tee(sinks, msg):
         sink.write(msg)
 
 
+def tee_fmt(sinks, msg):
+    msg_fmt = '{0:%Y-%m-%d %H:%M:%S} '.format(datetime.datetime.now()) + msg
+    tee(sinks, msg_fmt)
+
+
 # Calculate avg and error and log them
 def analyze_result(conf, sinks):
     assert (isinstance(conf, RunConf))
@@ -91,10 +97,10 @@ def analyze_result(conf, sinks):
     standard_deviation = std(exectimes, ddof=1)
     t_bounds = t.interval(0.95, len(exectimes) - 1)
     ci = [exectimes_mean + crit_val * standard_deviation / sqrt(len(exectimes)) for crit_val in t_bounds]
-    tee(sinks, "Mean exec time:\n")
-    tee(sinks, str(exectimes_mean) + "\n")
-    tee(sinks, "0.95 confidence interval, assuming T-student distribution:\n")
-    tee(sinks, str(ci[0]) + ", " + str(ci[1]) + "\n")
+    tee_fmt(sinks, "Mean exec time:\n")
+    tee(sinks, "{0:.2f}\n".format(exectimes_mean))
+    tee_fmt(sinks, "0.95 confidence interval, assuming T-student distribution:\n")
+    tee(sinks,  "{0:.2f}, {1:.2f}\n".format(ci[0], ci[1]))
 
 
 # Run run.sh one time
@@ -104,7 +110,7 @@ def run_conf(conf):
         os.makedirs(conf.res_dir)
     # log to run.py stdout as well as to log file
     sinks = [open(os.path.join(conf.res_dir, "log.txt"), "w"), sys.stdout]
-    tee(sinks, "Running\n")
+    tee_fmt(sinks, "Running\n")
     tee(sinks, ' '.join(conf.to_run_command()) + '\n')
 
     p = subprocess.Popen(conf.to_run_command(),
@@ -121,7 +127,7 @@ def run_conf(conf):
     retcode = p.wait()
     if retcode == 0:
         analyze_result(conf, sinks)
-    tee(sinks, "run.sh ended with retcode {}\n".format(retcode))
+    tee_fmt(sinks, "run.sh ended with retcode {}\n".format(retcode))
 
 
 if __name__ == "__main__":
