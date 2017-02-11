@@ -2,14 +2,14 @@
 # Lines starting with '#' are comments
 
 # Scale, real number passed to dbgen. Roughly equivalent to GBs of data.
-scale = 1
+scale = 40
 
 # Installation directory of postgres. pgdatadir/bin must contain the binaries such
 # as pg_ctl
-pginstdir = /home/ars/postgres/install/rev-ext-patched
+pginstdir = /home/ars/install/jit-expr
 
 # 'Data' directory of postgres
-pgdatadir = /home/ars/postgres/tpchdata
+pgdatadir = /mnt/ramdisk/ars/pgsql-data-40
 # pgdatadir = /tmp/postgresql-install
 
 # Port where Postgres will listen
@@ -17,9 +17,6 @@ pgport = 5442
 
 # Name of table with TPC-H data
 tpchdbname = tpch
-
-# Passed as a -U param to psql. By default `whoami`
-pguser = zhroma
 
 
 # Values for prepare.sh only
@@ -35,14 +32,22 @@ dbgenpath = dbgens/dbgen-orig
 
 # Now, values for run.sh only
 
-# Queries to run. Possible values are 'all' or list of numbers, e.g. '1 2 5'
+# Queries to run. Possible values are 'all' or list of names, e.g. 'q01 ss hj'
 queries = ss
 
 # Number of warmups. Each query is run warmups times first without recording the
-# result
-warmups = 2
+# result, and then one time recording it.
+warmups = 20
 
 # Commands to run by Postgres before executing the actual query. For example,
 # you can set formatting here or enable extension.
 # backslash escapes will be interpreted by echo, i.e. \n means newline
 precmd =
+
+# Another possibility to run some commands before executing query. The
+# whole file precmd_file will be read and executed before the actual query.
+# File path must be relative to this project root.
+precmdfile = precmd.sql
+
+# Passed as a -U param to psql. By default `whoami`
+# pguser = zhroma

@@ -4,7 +4,7 @@ show_help() {
     cat <<EOF
      Usage: bash ${0##*/} <-s scale> <-i pginstdir> <-d pgdatadir>
        <-p pgport> <-n tpchdbname> <-q queries> <-w warmups> [-c precmd]
-       [-f precmd_file] [-U pguser] <testname>
+       [-f precmdfile] [-U pguser] <testname>
 
      Run TPC-H queries from ./queries on prepared Postgres cluster, measuring
      duration with 'time'. Script relies on previously run ./prepare.sh to get
@@ -13,34 +13,22 @@ show_help() {
      yourself.
 
      The results will be put to directory ./res/testname-scale. Inside it, a dir
-     will be created named qxx, where xx is number of the query, with:
+     will be created named qxx, where qxx is name of the query, with:
        * File exectimes.txt with execution times: first 'warmup' lines are warmup
          times, the last one is the actual run time.
        * File answer.txt with computed answer
        * File qxx.sql with used query.
 
      Options
-     -q queries
-       queries to run; if not set it is read from pgtpch.conf, see description
-       in pgtpch.conf.example
-     -c precmd
-        command to run before executing query; if not set it is read from
-	pgtpch.conf, see description in pgtpch.conf.example
-     -f precmd_file
-     	another possibility to run some commands before executing query. The
- 	whole file precmd_file will be read and executed before the actual query.
-	File path must be relative to this project root.
-     -w warmups
-        number of warmups; if not set it is read from
-	pgtpch.conf, see description in pgtpch.conf.example
+
      -h display this help and exit
 
-     scale, pginstdir, pgdatadir, tpchdbname, pgport, pguser are all set as
-     follows:
+     All other options are set as follows:
        * If prepare.sh was run, it will dump it's conf to pgtpch_last.conf, and
          we read here this file
        * If it doesn't exist, we try to read configs from pgtpch.conf
        * Finally, you can set them as a command line args
+     See their descripiton in pgtpch.conf.example.
      FIXME: pguser is not yet added in prepare.sh
 
      testname

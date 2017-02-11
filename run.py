@@ -8,18 +8,24 @@ import pprint
 import argparse
 import datetime
 
-from scipy.stats import t
-from numpy import average, std
-from math import sqrt
-
+# check for scipy and numpy availability to calc confidence intervals
+try:
+    from scipy.stats import t
+    from numpy import average, std
+    scipy_loaded = True
+except ImportError:
+    scipy_loaded = False
+    print("Scipy is not available, results will not be summarized")
 
 # parsed conf values
 class RunConf:
     # conf is dict of opts needed to run run.sh
     # all params except the last 3 are required
     def __init__(self, conf):
-        # [] access raises KeyError if key not found while .get() returns None, which is handy for us
-        self.scale = str(conf["scale"])  # we don't care in this script about the number itself, so stringify it
+        # [] access raises KeyError if key not found while .get() returns None,
+        # which is handy for us
+        # we don't care in this script about the number itself, so stringify it
+        self.scale = str(conf["scale"])
         self.pginstdir = conf["pginstdir"]
         self.pgdatadir = conf["pgdatadir"]
         self.pgport = conf["pgport"]
@@ -29,18 +35,20 @@ class RunConf:
         self.testname = conf["testname"]
 
         self.precmd = conf.get("precmd")
-        self.precmd_file = conf.get("precmdfile")
+        self.precmdfile = conf.get("precmdfile")
         self.pguser = conf.get("pguser")
 
-        self.res_dir = os.path.join("res", "{0}-{1}".format(self.testname, self.scale))
+        self.res_dir = os.path.join("res", "{0}-{1}".format(
+            self.testname, self.scale))
 
     def to_run_command(self):
-        run_cmd = ["./run.sh", "-s", self.scale, "-i", self.pginstdir, "-d", self.pgdatadir, "-p", self.pgport,
-                   "-n", self.tpchdbname, "-q", self.query, "-w", str(self.warmups)]
+        run_cmd = ["./run.sh", "-s", self.scale, "-i", self.pginstdir, "-d",
+                   self.pgdatadir, "-p", self.pgport, "-n", self.tpchdbname,
+                   "-q", self.query, "-w", str(self.warmups)]
         if self.precmd is not None:
             run_cmd.extend(["-c", self.precmd])
-        if self.precmd_file is not None:
-            run_cmd.extend(["-f", self.precmd_file])
+        if self.precmdfile is not None:
+            run_cmd.extend(["-f", self.precmdfile])
         if self.pguser is not None:
             run_cmd.extend(["-U", self.pguser])
         run_cmd.append(self.testname)
@@ -66,6 +74,7 @@ def parse_default_conf():
 def tee(sinks, msg):
     for sink in sinks:
         sink.write(msg)
+        sink.flush()
 
 
 def tee_fmt(sinks, msg):
@@ -92,15 +101,17 @@ def analyze_result(conf, sinks):
         tee("There were {0} runs, but {1} exec times were found, aborting analyzing\n".format(n_runs, exectimes_parsed))
         return
 
-    # calculate 0.95 confidence interval, assuming T-student distribution
-    exectimes_mean = average(exectimes)
-    standard_deviation = std(exectimes, ddof=1)
-    t_bounds = t.interval(0.95, len(exectimes) - 1)
-    ci = [exectimes_mean + crit_val * standard_deviation / sqrt(len(exectimes)) for crit_val in t_bounds]
-    tee_fmt(sinks, "Mean exec time:\n")
-    tee(sinks, "{0:.2f}\n".format(exectimes_mean))
-    tee_fmt(sinks, "0.95 confidence interval, assuming T-student distribution:\n")
-    tee(sinks,  "{0:.2f}, {1:.2f}\n".format(ci[0], ci[1]))
+    if scipy_loaded:
+        # calculate 0.95 confidence interval, assuming T-student distribution
+        exectimes_mean = average(exectimes)
+        standard_deviation = std(exectimes, ddof=1)
+        t_bounds = t.interval(0.95, len(exectimes) - 1)
+        ci = [exectimes_mean + crit_val * standard_deviation / math.sqrt(len(exectimes))
+              for crit_val in t_bounds]
+        tee_fmt(sinks, "Mean exec time:\n")
+        tee(sinks, "{0:.2f}\n".format(exectimes_mean))
+        tee_fmt(sinks, "0.95 confidence interval, assuming T-student distribution:\n")
+        tee(sinks,  "{0:.2f}, {1:.2f}\n".format(ci[0], ci[1]))
 
 
 # Run run.sh one time
@@ -132,7 +143,8 @@ def run_conf(conf):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rc", default="runconf.json", help="json file with configs to run, see runconf.json.example")
+    parser.add_argument("--rc", default="runconf.json",
+                        help="json file with configs to run, see runconf.json.example")
     args = parser.parse_args()
 
     default_conf = parse_default_conf()

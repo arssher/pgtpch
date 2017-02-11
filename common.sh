@@ -41,16 +41,17 @@ read_conf() {
     SCALE=$(echo "$CONFS" | awk -F' *= *' '/^scale/{print $2}')
     PGINSTDIR=$(echo "$CONFS" | awk -F' *= *' '/^pginstdir/{print $2}')
     PGDATADIR=$(echo "$CONFS" | awk -F' *= *' '/^pgdatadir/{print $2}')
-    TPCHTMP=$(echo "$CONFS" | awk -F' *= *' '/^tpchtmp/{print $2}')
     PGPORT=$(echo "$CONFS" | awk -F' *= *' '/^pgport/{print $2}')
     TPCHDBNAME=$(echo "$CONFS" | awk -F' *= *' '/^tpchdbname/{print $2}')
+    TPCHTMP=$(echo "$CONFS" | awk -F' *= *' '/^tpchtmp/{print $2}')
     DBGENPATH=$(echo "$CONFS" | awk -F' *= *' '/^dbgenpath/{print $2}')
     # values for run.sh only
     QUERIES=$(echo "$CONFS" | awk -F' *= *' '/^queries/{print $2}')
+    WARMUPS=$(echo "$CONFS" | awk -F' *= *' '/^warmups/{print $2}')
     # precmd might contain '=' symbols, so things are different.
     # \s is whitespace, \K ignores part of line matched before \K.
     PRECMD=$(echo "$CONFS" | grep --perl-regexp --only-matching '^precmd\s*=\s*\K.*')
-    WARMUPS=$(echo "$CONFS" | awk -F' *= *' '/^warmups/{print $2}')
+    PRECMDFILE=$(echo "$CONFS" | awk -F' *= *' '/^precmdfile/{print $2}')
     PGUSER=$(echo "$CONFS" | awk -F' *= *' '/^pguser/{print $2}')
 
     if [ -z "$PGUSER" ]; then
