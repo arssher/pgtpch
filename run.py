@@ -7,6 +7,7 @@ import json
 import pprint
 import argparse
 import datetime
+import math
 
 # check for scipy and numpy availability to calc confidence intervals
 try:
