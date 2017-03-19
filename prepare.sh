@@ -107,7 +107,7 @@ if [ -z "$DBGENPATH" ]; then die "dbgenpath is empty"; fi
 # directory with this script
 BASEDIR=`dirname "$(readlink -f "$0")"`
 PGBINDIR="${PGINSTDIR}/bin"
-PGLIBIR="${PGINSTDIR}/lib"
+PGLIBDIR="${PGINSTDIR}/lib"
 cd "$BASEDIR"
 cd "$DBGENPATH" || die "dbgen directory not found"
 DBGENABSPATH=`readlink -f "$(pwd)"`
@@ -246,7 +246,8 @@ if [ "$CREATEINDEXES" = true ]; then
 	"CREATE INDEX i_l_commitdate ON lineitem (l_commitdate);"	#& #unused on 1GB
     )
     for cmd in "${INDEXCMDS[@]}"; do
-	$PGBINDIR/psql -h /tmp -p $PGPORT -d $TPCHDBNAME -c "$cmd"
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/psql -h /tmp \
+		       -p $PGPORT -d $TPCHDBNAME -c "$cmd"
     done
     wait_jobs
     echo "Indexes created"
