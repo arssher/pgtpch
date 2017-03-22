@@ -1,11 +1,10 @@
 pgtpch.conf
-pgtpch_last.conf
+pgtpch_prepared.conf
 postgresql.conf
-postgresql_after_prepare.conf
+ext.conf
 precmd.sql
+queries/
 runconf*.json
-
-/queries/
 res/
 
 # dbgen build files

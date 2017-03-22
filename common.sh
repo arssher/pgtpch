@@ -7,14 +7,14 @@ error() {
   else
     echo "Error on or near line ${parent_lineno}; exiting with status ${code}"
   fi
-  postgres_stop
+  postgres_stop 0
   exit "${code}"
 }
 # on error, print bad line number and exit
 trap 'error ${LINENO}' ERR
 
-LASTCONF="pgtpch_last.conf"
 CONFIGFILE="pgtpch.conf"
+NUMTPCHQUERIES=22
 
 # =========================== Functions ======================================
 
@@ -43,11 +43,15 @@ read_conf() {
     PGDATADIR=$(echo "$CONFS" | awk -F' *= *' '/^pgdatadir/{print $2}')
     PGPORT=$(echo "$CONFS" | awk -F' *= *' '/^pgport/{print $2}')
     TPCHDBNAME=$(echo "$CONFS" | awk -F' *= *' '/^tpchdbname/{print $2}')
+    # values for prepare.sh
     TPCHTMP=$(echo "$CONFS" | awk -F' *= *' '/^tpchtmp/{print $2}')
     DBGENPATH=$(echo "$CONFS" | awk -F' *= *' '/^dbgenpath/{print $2}')
-    # values for run.sh only
+    # values for run.sh
+    EXTCONFFILE=$(echo "$CONFS" | awk -F' *= *' '/^extconffile/{print $2}')
+    COPYDIR=$(echo "$CONFS" | awk -F' *= *' '/^copydir/{print $2}')
     QUERIES=$(echo "$CONFS" | awk -F' *= *' '/^queries/{print $2}')
     WARMUPS=$(echo "$CONFS" | awk -F' *= *' '/^warmups/{print $2}')
+    TIMERRUNS=$(echo "$CONFS" | awk -F' *= *' '/^timerruns/{print $2}')
     # precmd might contain '=' symbols, so things are different.
     # \s is whitespace, \K ignores part of line matched before \K.
     PRECMD=$(echo "$CONFS" | grep --perl-regexp --only-matching '^precmd\s*=\s*\K.*')
@@ -100,8 +104,16 @@ server_running() {
 		   -D $PGDATADIR | grep "server is running" -q
 }
 
+# Drop caches
+drop_caches() {
+  echo -n "Drop caches..."
+  sync && echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
+  echo "done"
+}
+
 # Start postgres PGBINDIR at PGDATADIR on PGPORT and save it's pid in PGPID.
 # PGLIBDIR should point to right libs.
+# Calls drop_caches if $1 is 1
 postgres_start() {
     # Check for the running Postgres; exit if there is any on the given port
     PGPORT_PROCLIST="$(lsof -i tcp:$PGPORT | tail -n +2 | awk '{print $2}')"
@@ -118,6 +130,10 @@ postgres_start() {
 	die "Postgres server is already running in the $PGDATADIR directory.";
     fi
 
+    if [[ "x$1" = "x1" ]]; then
+      drop_caches
+    fi
+
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/postgres \
 		   -D "$PGDATADIR" -p $PGPORT &
     PGPID=$!
@@ -132,27 +148,34 @@ postgres_start() {
 
 # Stop postgres PGBINDIR at PGDATADIR
 # PGLIBDIR should point to right libs.
+# Calls drop_caches if $1 is 1
 postgres_stop() {
     LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$PGLIBDIR" $PGBINDIR/pg_ctl stop \
 		   -D $PGDATADIR
+    if [[ "x$1" = "x1" ]]; then
+      drop_caches
+    fi
 }
 
-# Generate queries and put them to $BASEDIR/queries/qxx.sql, where xx is a number
+# Generate queries and put them to $1/queries/qxx.sql, where xx is a number
 # of the query. Also generates qxx.explain.sql and qxx.analyze.sql.
 # Requires DBGENABSPATH set with path to dbgen
 gen_queries() {
     cd "$DBGENABSPATH"
-    make -j4 # build dbgen
-    for i in $(seq 1 22); do
+    make -j # build dbgen
+    if ! [ -x "$DBGENABSPATH/dbgen" ] || ! [ -x "$DBGENABSPATH/qgen" ]; then
+        die "Can't find dbgen or qgen.";
+    fi
+    mkdir -p "$1/queries"
+    for i in $(seq 1 $NUMTPCHQUERIES); do
 	ii=$(printf "%02d" $i)
-	mkdir -p "$BASEDIR/queries"
 	# DSS_QUERY points to dir with queries that qgen uses to build the actual
 	# queries
-	DSS_QUERY="$DBGENABSPATH/queries" ./qgen $i > "$BASEDIR/queries/q${ii}.sql"
-	sed 's/^select/explain select/' "$BASEDIR/queries/q${ii}.sql" > \
-	    "$BASEDIR/queries/q${ii}.explain.sql"
-	sed 's/^select/explain analyze select/' "$BASEDIR/queries/q${ii}.sql" > \
-	    "$BASEDIR/queries/q${ii}.analyze.sql"
+	DSS_QUERY="$DBGENABSPATH/queries" ./qgen $i > "$1/queries/q${ii}.sql"
+	sed 's/^select/explain select/' "$1/queries/q${ii}.sql" > \
+	    "$1/queries/q${ii}.explain.sql"
+	sed 's/^select/explain analyze select/' "$1/queries/q${ii}.sql" > \
+	    "$1/queries/q${ii}.analyze.sql"
     done
     echo "Queries generated"
 }

@@ -37,4 +37,4 @@ cd "$BASEDIR"
 cd "$DBGENPATH" || die "dbgen directory not found"
 DBGENABSPATH=`readlink -f "$(pwd)"`
 
-gen_queries
+gen_queries $BASEDIR

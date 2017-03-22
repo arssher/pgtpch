@@ -1,0 +1,4 @@
+-- These 3 lines change answer format for easier evaluation
+\pset expanded
+\pset format unaligned
+\pset fieldsep ' '

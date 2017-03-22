@@ -12,16 +12,18 @@ In short,
    ./prepare.sh
    ./run.py
 
-It is recommended to run
- echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
-to disable transparent huge pages.
+Scripts use the following tee commands, it is recommended to setup sudoers to
+run them without password prompt:
+  * echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
+  * echo 3 | sudo tee /proc/sys/vm/drop_caches
+First disables transparent huge pages, second drops kernel fs caches
 
 Each script has "./script -h" help
 
 prepare.sh creates database cluster with table containing TPC-H data and
-generates the queries.
+generates the queries folder inside cluster directory.
 
-gen_queries.h generates the queries.
+gen_queries.h generates the queries folder in current directory.
 
 run.sh runs the queries.
 

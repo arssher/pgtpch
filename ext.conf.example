@@ -1,0 +1,1 @@
+shared_preload_libraries = '$libdir/llvm_pg'
