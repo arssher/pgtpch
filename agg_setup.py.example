@@ -1,0 +1,19 @@
+# receives list of tests and returns list of lists -- each list contains
+# list of test_names which will be first (no pun intended) entry in res.csv
+def group_tests(test_names):
+    test_groups = [[], []]
+    for test_name in test_names:
+        if 'reversed' in test_name and 'typed' in test_name:
+            if 'andres' in test_name:
+                test_groups[1].append(test_name)
+            else:
+                test_groups[0].append(test_name)
+    return test_groups
+
+
+# get test_name of reference entry in res.csv corresponding to test_name, or None
+# if test_name is not supposed to be paired
+def get_paired(test_name):
+    if 'andres' in test_name:
+        return test_name.replace('_reversed', '', 1)
+    return test_name.replace('reversed', 'vanilla', 1)

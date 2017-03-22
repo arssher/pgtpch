@@ -38,6 +38,8 @@ class RunConf:
         self.precmd = conf.get("precmd")
         self.precmdfile = conf.get("precmdfile")
         self.pguser = conf.get("pguser")
+        self.extconffile = conf.get("extconffile")
+        self.timerruns = conf.get("timerruns")
 
         self.res_dir = os.path.join("res", "{0}-{1}".format(
             self.testname, self.scale))
@@ -52,6 +54,11 @@ class RunConf:
             run_cmd.extend(["-f", self.precmdfile])
         if self.pguser is not None:
             run_cmd.extend(["-U", self.pguser])
+        if self.extconffile is not None:
+            run_cmd.extend(["-e", self.extconffile])
+        if self.pguser is not None:
+            run_cmd.extend(["-t", self.timerruns])
+
         run_cmd.append(self.testname)
 
         return run_cmd
@@ -143,7 +150,11 @@ def run_conf(conf):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""
+    Invokes run.sh several times according to json config, see runconf.json.example
+    for example. Calculates mean and confidence intervals and logs everything to
+    stdout and res/testname/log.txt
+    """)
     parser.add_argument("--rc", default="runconf.json",
                         help="json file with configs to run, see runconf.json.example")
     args = parser.parse_args()

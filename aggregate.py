@@ -8,26 +8,7 @@ import scipy.stats
 import numpy as np
 import math
 
-# receives list of tests and returns list of lists -- each list contains
-# list of test_names which will be first (no pun intended) entry in res.csv
-def group_tests(test_names):
-    test_groups = [[], []]
-    for test_name in test_names:
-        if 'reversed' in test_name and 'typed' in test_name:
-            if 'andres' in test_name:
-                test_groups[1].append(test_name)
-            else:
-                test_groups[0].append(test_name)
-    return test_groups
-
-
-# get test_name of reference entry in res.csv corresponding to test_name, or None
-# if test_name is not supposed to be paired
-def get_paired(test_name):
-    if 'andres' in test_name:
-        return test_name.replace('_reversed', '', 1)
-    return test_name.replace('reversed', 'vanilla', 1)
-
+from agg_setup import group_tests, get_paired
 
 def percent_speedup_ref_denom(test_res, ref_res):
     return '%.2f' % ((ref_res - test_res) / (1.0 * ref_res) * 100)
@@ -110,8 +91,9 @@ if __name__ == "__main__":
     Quick-and-dirty script to calc some stats after using run.py.
     Run it from project root directory, it will find res/ dir and put res.csv
     file with results there. group_tests and get_paired funcs are kind of
-    parameters, the first selects tests to analyze and groups them, the seconds
-    tells how to find pairs for them.
+    parameters, the first selects tests to analyze and groups them, the second
+    tells how to find pairs for them. Define them in agg_setup.py,
+    see agg_setup.py.example for example.
     """)
     parser.add_argument('-d', default='rd',
                         help="""
