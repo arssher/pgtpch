@@ -177,7 +177,7 @@ if [ "$GENDATA" = true ]; then
     # -v is verbose, -f for overwrtiting existing files, -T <letter> is
     # "generate only table <letter>"
     for TABLENAME in c s n r O L P s S; do
-	"$DBGENABSPATH/dbgen" -s $SCALE -f -v -T $TABLENAME &
+	"$DBGENABSPATH/dbgen" -s $SCALE -f -T $TABLENAME &
     done
     wait_jobs
     echo "TPC-H data *.tbl files generated at $TPCHTMP"
