@@ -7,6 +7,8 @@ show_help() {
        [-z copydir] [-e extconffile] [-c precmd] [-f precmdfile] [-U pguser]
        <testname>
 
+     This script is kind of deprecated; you should use run.py instead.
+
      Run TPC-H queries on prepared Postgres cluster, measuring
      duration with 'time'.
 

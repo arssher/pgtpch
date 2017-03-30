@@ -3,7 +3,7 @@
     "scale": "1",
     "pginstdir": "/home/ars/postgres/install/rev-ext-patched",
     "pgdatadir": "/home/ars/postgres/tpchdata",
-    "query": "ss",
+    "queries": "ss",
     "warmups": 3,
     "precmd": "set enable_reverse_exec_hook to off;",
     "precmdfile": "precmd.sql",
@@ -13,7 +13,7 @@
     "scale": "1",
     "pginstdir": "/home/ars/postgres/install/rev-ext-patched",
     "pgdatadir": "/home/ars/postgres/tpchdata",
-    "query": "ss",
+    "queries": "q10 ss",
     "warmups": 3,
     "precmdfile": "precmd.sql",
     "testname": "ss_reversed"

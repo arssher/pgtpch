@@ -2,3 +2,11 @@
 \pset expanded
 \pset format unaligned
 \pset fieldsep ' '
+
+-- enable/disable some features
+set enable_indexscan TO off;
+set enable_indexonlyscan TO off;
+set enable_material TO off;
+set enable_bitmapscan TO off;
+set enable_nestloop TO off;
+set enable_sort TO off;

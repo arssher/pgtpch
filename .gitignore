@@ -6,6 +6,7 @@ precmd.sql
 queries/
 runconf*.json
 res/
+perf_res/
 
 agg_setup.py
 

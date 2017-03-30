@@ -16,22 +16,25 @@ Scripts use the following tee commands, it is recommended to setup sudoers to
 run them without password prompt:
   * echo never | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
   * echo 3 | sudo tee /proc/sys/vm/drop_caches
-First disables transparent huge pages, second drops kernel fs caches
+First disables transparent huge pages, second drops kernel fs caches.
+And even more commands, if you use perf:
+  * echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+  * sudo perf record
+  * sudo kill -2 'perf record pid'
+  * sudo perf script
+
 
 Each script has "./script -h" help
 
-prepare.sh creates database cluster with table containing TPC-H data and
+prepare.sh creates database cluster with database containing TPC-H data and
 generates the queries folder inside cluster directory.
 
-gen_queries.h generates the queries folder in current directory.
+gen_queries.h generates the 'queries' dir with TPC-H queries in the current
+directory.
 
-run.sh runs the queries.
+run.sh runs the queries. It is kind of deprecated, run.py should be used instead.
 
-run.py is wrapper around run.sh with following features:
-  * It allows to specify multiple configurations to run in json file, see
-    runconf.json.example for example;
-  * It calculates mean and confidence interval of all exec times;
-  * It logs everything to stdout and res/testname/log.txt
-Unlike run.sh, one configuration of run.py supports only one query.
+run.py tests multiple configurations. See its help and pgtpch.conf.example
+for details.
 
-Tested only on GNU/Linux, Ubuntu 14.04 and OpenSuse 42.1
+Tested only on GNU/Linux, Ubuntu 14.04 and OpenSuse 42.2

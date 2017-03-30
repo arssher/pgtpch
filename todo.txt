@@ -1,5 +1,5 @@
 change conf while running?
-read_conf fails if key not found
+read_conf fails if key not found?
 Disabling creating indexes fails, tables are not filled. (?)
 sudo usage?
 should we really use individual set of queries for each generated db?
