@@ -335,6 +335,9 @@ class PerfRunner(StandardRunner):
         # so we will capture it and send to log manually
         retcode, out, fold_stderr = fold.run(retcode=None)
         (echo[fold_stderr] >> fl_log)()
+        # remove perf.data, if needed
+        if (self.pc.get("rmperfdata") is not None and self.pc["rmperfdata"] == "true"):
+            rm("-f", perfdata)
         if retcode != 0:
             self.log("stackcollapse-perf failed, check out fg_log.txt")
             return
