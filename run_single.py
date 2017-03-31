@@ -238,7 +238,7 @@ class StandardRunner(object):
 
     # get res dir of current query
     def get_res_dir(self):
-        return os.path.join("_res", "{0}-{1}-{2}".format(
+        return os.path.join("res", "{0}-{1}-{2}".format(
             self.pc["testname"], self.query, self.pc["scale"]))
 
     # log to stdout and 'log.txt' of current query

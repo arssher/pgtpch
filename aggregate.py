@@ -27,22 +27,19 @@ def t_ci(samples):
     return ci
 
 
-# read samples in res/tname/qname/exectime.txt, assumes we are in res/
+# read samples in res/tname/exectime.txt, assumes we are in res/
 # returns, well, numpy array, not usual list
-def get_samples(tname, qname):
-    et_path = os.path.join(tname, qname, 'exectime.txt')
+def get_samples(tname):
+    et_path = os.path.join(tname, 'exectime.txt')
     assert os.path.isfile(et_path)
     return np.loadtxt(et_path)
 
 
 # Process pair of tests test_name and reftest_name, assumes we are in res/ dir.
 def process_pair(csvwriter, test_name, reftest_name, percent_speedup_func):
-    dirlist = next(os.walk(test_name))[1]
-    assert len(dirlist) == 1
-    qname = dirlist[0]
-    csvrow = [test_name, qname]
-    test_samples = get_samples(test_name, qname)
-    reftest_samples = get_samples(reftest_name, qname)
+    csvrow = [test_name]
+    test_samples = get_samples(test_name)
+    reftest_samples = get_samples(reftest_name)
 
     t_median, r_median = np.median(test_samples), np.median(reftest_samples)
     csvrow.extend([t_median, r_median, percent_speedup_func(t_median, r_median)])
@@ -68,7 +65,7 @@ def aggregate(percent_speedup_func):
 
     with open('res.csv', 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter='\t')
-        header = ['test name', 'query',
+        header = ['test name',
                   'test median', 'ref median', '% speedup median',
                   'test min', 'ref min', '% speedup min',
                   'test avg', 'test 0.95 CI', 'ref avg', 'ref 0.95 CI', '% speedup avg']
