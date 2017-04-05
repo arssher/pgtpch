@@ -33,6 +33,12 @@ class QueryNotFoundError(Exception):
     pass
 
 
+# convert any unknown types to string in json.dumps
+class Stringifier(json.JSONEncoder):
+    def default(self, obj):
+        return str(obj)
+
+
 # parsed conf values
 class PgtpchConf:
     # conf is dict of opts
@@ -202,7 +208,7 @@ class StandardRunner(object):
                     else:
                         # last run, record the answer
                         answer = curs.fetchall()
-                        answer_json = json.dumps(answer, indent=4)
+                        answer_json = json.dumps(answer, indent=4, cls=Stringifier)
                         (echo[answer_json] > os.path.join(res_dir, "answer.json"))()
                 # log exectime
                 exectime = time.time() - starttime

@@ -39,7 +39,6 @@ tpchdbname = tpch
 #   * exectimes.txt with execution times in secs; first <warmup> lines are
 #     warmup times, the last one is the run time with answer output;
 #   * answer.json with computed answer;
-#   * precmd.sql with statements executed before running the query;
 #   * <query>.sql with used query;
 # We restart postgres (and copy <pgdatadir>, see <copydir> option below) once
 # for each query; for each query we use only one connection to execute all
@@ -57,6 +56,7 @@ tpchdbname = tpch
 
 # This is required parameter.
 runner = perfer
+# runner = standard
 
 # Common for all runners options
 
@@ -99,7 +99,7 @@ warmups = 15
 # The only perf record opts we specify automatically is -p to attach to proper
 # backend process and -o with output filename. Set the rest here. Spaces in
 # options are not allowed.
-perfrecopts = -c 65536 -e task-clock:ppp --call-graph dwarf
+perfrecopts = -c 3600000 -e task-clock:ppp --call-graph dwarf
 
 # Generate svg with flamegraph for each perf.data file. Put it to
 # <query>-<runnum>.svg file. fg_path must be set, if you use this; -g or
