@@ -7,14 +7,14 @@
 #-----------------------------
 
 # Scale, real number passed to dbgen. Roughly equivalent to GBs of data.
-scale = 5
+scale = 25
 
 # Installation directory of postgres. pgdatadir/bin must contain the binaries such
 # as pg_ctl
 pginstdir = /home/ars/postgres/install/vanilla
 
 # 'Data' directory of postgres
-pgdatadir = /mnt/pgsql/data/devel-4dd3abe99f-typed/pgsql-data-5
+pgdatadir = /mnt/pgsql/data/devel-4dd3abe99f-typed/pgsql-data-25
 
 # Port where Postgres will listen
 pgport = 5442
@@ -33,7 +33,8 @@ tpchdbname = tpch
 # Runs queries, measuring the execution time.
 # It runs each query <warmup> times without recording the answer and one more
 # saving it. The results for each query will be in directory
-# ./res/<testname>-<query>-<scale>, old dirs will be removed if exists.
+# ./res/<datetime of run.py start><testname>-<query>-<scale>, old dir will be
+# removed if exists.
 # Directory will contain the following files:
 #   * log.txt with log for this query;
 #   * exectimes.txt with execution times in secs; first <warmup> lines are
@@ -55,8 +56,8 @@ tpchdbname = tpch
 #   * probably <query>-<numrun>.svg with flamegraphs
 
 # This is required parameter.
+# runner = perfer
 runner = perfer
-# runner = standard
 
 # Common for all runners options
 
@@ -93,6 +94,7 @@ precmdfile = precmd.sql
 # 'numruns'
 # This is required parameter.
 warmups = 15
+
 
 # 'perfer' runner specific options
 
