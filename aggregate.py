@@ -8,7 +8,7 @@ import scipy.stats
 import numpy as np
 import math
 
-from agg_setup import group_tests, get_paired
+from agg_setup import group_tests, get_paired, preprocess_samples
 
 def percent_speedup_ref_denom(test_res, ref_res):
     return '%.2f' % ((ref_res - test_res) / (1.0 * ref_res) * 100)
@@ -38,8 +38,8 @@ def get_samples(tname):
 # Process pair of tests test_name and reftest_name, assumes we are in res/ dir.
 def process_pair(csvwriter, test_name, reftest_name, percent_speedup_func):
     csvrow = [test_name]
-    test_samples = get_samples(test_name)
-    reftest_samples = get_samples(reftest_name)
+    test_samples = preprocess_samples(get_samples(test_name))
+    reftest_samples = preprocess_samples(get_samples(reftest_name))
 
     t_median, r_median = np.median(test_samples), np.median(reftest_samples)
     csvrow.extend([t_median, r_median, percent_speedup_func(t_median, r_median)])

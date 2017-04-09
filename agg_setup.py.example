@@ -1,4 +1,5 @@
 import re
+import numpy as np
 
 # receives list of tests and returns list of lists -- each list contains
 # list of test_names which will be first (no pun intended) entry in res.csv
@@ -16,6 +17,17 @@ import re
 # if test_name is not supposed to be paired
 # def get_paired(test_name):
 #     return test_name.replace('reversed', 'vanilla', 1)
+
+# Here we can filter out outliers. Accepts numpy array.
+def preprocess_samples(samples):
+    dis_to_median = np.abs(samples - np.median(samples))
+    d = np.median(dis_to_median)
+    s = dis_to_median / d
+    filtered = samples[s < 100]
+    num_filtered = samples.size - filtered.size
+    if num_filtered > 0:
+        print("{} sample(s) filtered out".format(num_filtered))
+    return filtered
 
 
 # another example, grouping tests by timestamp
