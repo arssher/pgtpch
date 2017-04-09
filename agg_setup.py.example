@@ -1,19 +1,46 @@
+import re
+
 # receives list of tests and returns list of lists -- each list contains
 # list of test_names which will be first (no pun intended) entry in res.csv
+# simplest example
+# def group_tests(test_names):
+#     test_groups = [[]]
+#     rxp = re.compile('2017-04-06_16-04-07-reversed_typed-q[0-9][0-9]-25')
+#     for test_name in test_names:
+#         if re.match(rxp, test_name):
+#             test_groups[0].append(test_name)
+#     return test_groups
+
+
+# get test_name of reference entry in res.csv corresponding to test_name, or None
+# if test_name is not supposed to be paired
+# def get_paired(test_name):
+#     return test_name.replace('reversed', 'vanilla', 1)
+
+
+# another example, grouping tests by timestamp
 def group_tests(test_names):
-    test_groups = [[], []]
+    test_groups = []
+    rxp = re.compile('(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-reversed_typed-q\d{2}-25')
     for test_name in test_names:
-        if 'reversed' in test_name and 'typed' in test_name:
-            if 'andres' in test_name:
-                test_groups[1].append(test_name)
-            else:
-                test_groups[0].append(test_name)
+        match = re.search(rxp, test_name)
+        if match:
+            # group tests by timestamp
+            added = False
+            timestamp = match.group(1)
+            for test_group in test_groups:
+                if timestamp == re.search(rxp, test_group[0]).group(1):
+                    test_group.append(test_name)
+                    added = True
+                    break
+
+            if not added:
+                test_groups.append([test_name])
+
     return test_groups
 
 
 # get test_name of reference entry in res.csv corresponding to test_name, or None
 # if test_name is not supposed to be paired
 def get_paired(test_name):
-    if 'andres' in test_name:
-        return test_name.replace('_reversed', '', 1)
     return test_name.replace('reversed', 'vanilla', 1)

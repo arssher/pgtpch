@@ -69,8 +69,8 @@ class PgtpchConf:
     def __getitem__(self, key):
         return self.conf_dict[key]
 
-    def get(self, key):
-        return self.conf_dict.get(key)
+    def get(self, key, default=None):
+        return self.conf_dict.get(key, default)
 
     def to_run_command(self):
         run_cmd = ["./run.sh", "-s", self["scale"], "-i", self["pginstdir"], "-d",
@@ -175,6 +175,7 @@ class StandardRunner(object):
 
         # Ensure that res dir exists and empty
         res_dir = self.get_res_dir()
+        print("Creating directory {}".format(res_dir))
         shutil.rmtree(res_dir, True)
         os.makedirs(res_dir)
 
@@ -244,7 +245,13 @@ class StandardRunner(object):
 
     # get res dir of current query
     def get_res_dir(self):
-        return os.path.join("res", "{0}-{1}-{2}".format(
+        if self.pc.get("resdir_prefix") is not None:
+            prefix = "{}-".format(self.pc["resdir_prefix"])
+        else:
+            prefix = ''
+
+        return os.path.join("res", "{0}{1}-{2}-{3}".format(
+            prefix,
             self.pc["testname"], self.query, self.pc["scale"]))
 
     # log to stdout and 'log.txt' of current query
@@ -320,7 +327,13 @@ class PerfRunner(StandardRunner):
         self.perf_record_log.close()
 
     def get_res_dir(self):
-        return os.path.join("perf_res", "{0}-{1}-{2}".format(
+        if self.pc.get("resdir_prefix") is not None:
+            prefix = "{}-".format(self.pc["resdir_prefix"])
+        else:
+            prefix = ''
+
+        return os.path.join("perf_res", "{0}{1}-{2}-{3}".format(
+            prefix,
             self.pc["testname"], self.query, self.pc["scale"]))
 
     # perf.data file path for run number runnum

@@ -5,6 +5,7 @@ import subprocess
 import json
 import argparse
 import pprint
+import datetime
 
 # The only job of this script is for each conf:
 # * Dump this config to ./tmp_conf.json
@@ -49,12 +50,16 @@ if __name__ == "__main__":
     old_ld_lib_path = os.getenv('LD_LIBRARY_PATH', '')
 
     default_conf = parse_default_conf()
+    # set current datetime as prefix to all res dirs
+    curdt = '{0:%Y-%m-%d_%H-%M-%S}'.format(datetime.datetime.now())
+
     with open(args.rc) as f:
         confs = json.load(f)
         for conf in confs:
             # roll configuration given conf over default one on pgtpch.conf
             merged_conf = default_conf.copy()
             merged_conf.update(conf)
+            merged_conf["resdir_prefix"] = curdt
 
             with open('tmp_conf.json', 'w') as f:
                 json.dump(merged_conf, f)

@@ -57,11 +57,11 @@ def process_pair(csvwriter, test_name, reftest_name, percent_speedup_func):
     csvwriter.writerow(csvrow)
 
 
-def aggregate(percent_speedup_func):
+def aggregate(percent_speedup_func, resdir):
     if not os.path.isdir('res'):
         print('res directory not found')
         sys.exit(1)
-    os.chdir('res')
+    os.chdir(resdir)
 
     with open('res.csv', 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile, delimiter='\t')
@@ -73,6 +73,7 @@ def aggregate(percent_speedup_func):
         tests = next(os.walk('.'))[1]  # list of dirs in res/
         test_groups = group_tests(tests)
         for test_group in test_groups:
+            print("Processing new group")
             test_group.sort()
             for test_name in test_group:
                  reftest_name = get_paired(test_name)
@@ -86,20 +87,24 @@ def aggregate(percent_speedup_func):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="""
     Quick-and-dirty script to calc some stats after using run.py.
-    Run it from project root directory, it will find res/ dir and put res.csv
-    file with results there. group_tests and get_paired funcs are kind of
-    parameters, the first selects tests to analyze and groups them, the second
-    tells how to find pairs for them. Define them in agg_setup.py,
-    see agg_setup.py.example for example.
+    Run it from project root directory, it will put res.csv to the directory
+    with results.  file with results there. group_tests and get_paired funcs are
+    kind of parameters, the first selects tests to analyze and groups them, the
+    second tells how to find pairs for them. Define them in agg_setup.py,see
+    agg_setup.py.example for example.
     """)
     parser.add_argument('-d', default='rd',
                         help="""
                         While calculating speedups in %%, reference value in
                         denom (rd, default) or test value, otherwise
                         """)
+    parser.add_argument('-r', default='res',
+                        help="""
+                        Directory with results, 'res' is default
+                        """)
     args = parser.parse_args()
     if args.d == 'rd':
         percent_speedup_func = percent_speedup_ref_denom
     else:
         percent_speedup_func = percent_speedup_test_denom
-    aggregate(percent_speedup_func)
+    aggregate(percent_speedup_func, args.r)
