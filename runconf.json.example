@@ -1,21 +1,12 @@
 [
-  {
-    "scale": "1",
-    "pginstdir": "/home/ars/postgres/install/rev-ext-patched",
-    "pgdatadir": "/home/ars/postgres/tpchdata",
-    "queries": "ss",
-    "warmups": 3,
-    "precmd": "set enable_reverse_exec_hook to off;",
-    "precmdfile": "precmd.sql",
-    "testname": "ss_usual"
-  },
-  {
-    "scale": "1",
-    "pginstdir": "/home/ars/postgres/install/rev-ext-patched",
-    "pgdatadir": "/home/ars/postgres/tpchdata",
-    "queries": "q10 ss",
-    "warmups": 3,
-    "precmdfile": "precmd.sql",
-    "testname": "ss_reversed"
-  }
+    {
+	"pginstdir": "/home/ars/postgres/install/vanilla",
+	"queries": "q01 q03 q04 q05 q10 q12 q14",
+	"testname": "vanilla_typed"
+    },
+    {
+	"pginstdir": "/home/ars/postgres/install/reversed",
+	"queries": "q01 q03 q04 q05 q10 q12 q14",
+	"testname": "reversed_typed"
+    }
 ]
