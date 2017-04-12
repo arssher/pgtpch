@@ -1,22 +1,7 @@
 import re
 import numpy as np
+from datetime import datetime
 
-# receives list of tests and returns list of lists -- each list contains
-# list of test_names which will be first (no pun intended) entry in res.csv
-# simplest example
-# def group_tests(test_names):
-#     test_groups = [[]]
-#     rxp = re.compile('2017-04-06_16-04-07-reversed_typed-q[0-9][0-9]-25')
-#     for test_name in test_names:
-#         if re.match(rxp, test_name):
-#             test_groups[0].append(test_name)
-#     return test_groups
-
-
-# get test_name of reference entry in res.csv corresponding to test_name, or None
-# if test_name is not supposed to be paired
-# def get_paired(test_name):
-#     return test_name.replace('reversed', 'vanilla', 1)
 
 # Here we can filter out outliers. Accepts numpy array.
 def preprocess_samples(samples):
@@ -30,8 +15,19 @@ def preprocess_samples(samples):
     return filtered
 
 
+# receives list of tests and returns list of lists -- each list contains
+# list of test_names which will be first (no pun intended) entry in res.csv
+# simplest example
+def group_tests_simplest(test_names):
+    test_groups = [[]]
+    rxp = re.compile('2017-04-06_16-04-07-reversed_typed-q[0-9][0-9]-25')
+    for test_name in test_names:
+        if re.match(rxp, test_name):
+            test_groups[0].append(test_name)
+    return test_groups
+
 # another example, grouping tests by timestamp
-def group_tests(test_names):
+def group_tests_by_timestamp(test_names):
     test_groups = []
     rxp = re.compile('(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-reversed_typed-q\d{2}-25')
     for test_name in test_names:
@@ -50,6 +46,22 @@ def group_tests(test_names):
                 test_groups.append([test_name])
 
     return test_groups
+
+# add filtering...
+def filter_test_name(test_name):
+    rxp = re.compile('(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-reversed_typed-q\d{2}-25')
+    match = re.search(rxp, test_name)
+    if match is None:
+        return False
+    dtm = datetime.strptime(match.group(1), '%Y-%m-%d_%H-%M-%S')
+    return dtm > datetime(2017, 4, 10, 16)
+
+def group_tests_by_timestamp_with_filter(test_names):
+    filtered = filter(filter_test_name, test_names)
+    return group_tests_by_timestamp(filtered)
+
+# set it here
+group_tests = group_tests_by_timestamp_with_filter
 
 
 # get test_name of reference entry in res.csv corresponding to test_name, or None

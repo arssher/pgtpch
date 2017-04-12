@@ -73,7 +73,7 @@ def aggregate(percent_speedup_func, resdir):
         tests = next(os.walk('.'))[1]  # list of dirs in res/
         test_groups = group_tests(tests)
         for test_group in test_groups:
-            print("Processing new group")
+            print("\nProcessing new group")
             test_group.sort()
             for test_name in test_group:
                  reftest_name = get_paired(test_name)
