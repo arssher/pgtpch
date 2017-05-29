@@ -18,7 +18,7 @@ import math
 
 import plumbum
 from plumbum import local
-from plumbum.cmd import cp, rm, whoami, cat, echo, sudo, tee, perf, kill, sync
+from plumbum.cmd import cp, rm, whoami, cat, echo, sudo, tee, perf, kill, sync, chmod
 
 # check for scipy and numpy availability to calc confidence intervals
 try:
@@ -112,10 +112,12 @@ class PgtpchConf:
             print("Copy done")
             if self.get("extconffile") is not None:
                 if os.path.isfile(self["extconffile"]):
-                    (cat[self["extconffile"]] >> os.path.join(self.realpgdatadir, "postgresql.conf"))()
+                    (cat[self["extconffile"]] >> os.path.join(self.real_pgdatadir, "postgresql.conf"))()
                     print("extconffile appended")
                 else:
                     print("WARN: extconffile specified, but doesn't exists")
+            # postgres will complain if permissions are too wide
+            (chmod["0700", self.real_pgdatadir])()
 
     # start postgres, copying pgdatadir if needed
     def postgres_start(self, drop_caches=True):
@@ -125,6 +127,7 @@ class PgtpchConf:
             (echo["3"] | sudo[tee["/proc/sys/vm/drop_caches"]] > "/dev/null")()
         self.copydir()
         subprocess.check_call([os.path.join(self.pg_bin, "pg_ctl"),
+                               "-w",
                                "-D", self.real_pgdatadir,
                                '-o "-p {}"'.format(self["pgport"]),
                                "start"])
@@ -133,6 +136,7 @@ class PgtpchConf:
     # stop postgres, removing pgdatadir if needed
     def postgres_stop(self):
         subprocess.check_call([os.path.join(self.pg_bin, "pg_ctl"),
+                               "-w",
                                "-D", self.real_pgdatadir,
                                '-o "-p {}"'.format(self["pgport"]),
                                "stop"])
