@@ -15,10 +15,12 @@ import subprocess
 import json
 import psycopg2
 import math
+import getpass
+from glob import glob
 
 import plumbum
 from plumbum import local
-from plumbum.cmd import cp, rm, whoami, cat, echo, sudo, tee, perf, kill, sync, chmod
+from plumbum.cmd import cp, rm, cat, echo, sudo, tee, perf, kill, sync, chmod, chown
 
 # check for scipy and numpy availability to calc confidence intervals
 try:
@@ -52,7 +54,7 @@ class PgtpchConf:
         self.numruns = self["warmups"] + 1
 
         if self.get("pguser") is None:
-            self.conf_dict["pguser"] = whoami()
+            self.conf_dict["pguser"] = getpass.getuser()
 
         self.pg_bin = os.path.join(self["pginstdir"], "bin")
         if self.get("copydir") is None:
@@ -352,12 +354,23 @@ class PerfRunner(StandardRunner):
         st_pl = os.path.join(self.pc["fg_path"], "stackcollapse-perf.pl")
         perfdata = self.get_perfdata_path(runnum)
         folded = "out.perf-folded"
+
+        if (self.pc.get("perf_map_files") is not None and self.pc["perf_map_files"] == "true"):
+            # without this you will probably get
+            # "File /tmp/perf-24443.map not owned by current user or root, ignoring it"
+            (sudo[chown["root", glob('/tmp/perf-*.map')]])()
+
         fold = sudo[perf["script", "-i", perfdata]] | local[st_pl] > folded
         self.log("Running {}".format(fold))
         # seemingly plumbum doesn't allows to append-redirect stderr to file,
         # so we will capture it and send to log manually
         retcode, out, fold_stderr = fold.run(retcode=None)
         (echo[fold_stderr] >> fl_log)()
+
+        if (self.pc.get("perf_map_files") is not None and self.pc["perf_map_files"] == "true"):
+            # llvm jit will reuse them
+            (sudo[chown[getpass.getuser(), glob('/tmp/perf-*.map')]])()
+
         # remove perf.data, if needed
         if (self.pc.get("rmperfdata") is not None and self.pc["rmperfdata"] == "true"):
             rm("-f", perfdata)
