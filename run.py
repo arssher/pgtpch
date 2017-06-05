@@ -41,6 +41,12 @@ if __name__ == "__main__":
     of each one. See runconf.json.example to see how json config looks like.
 
     Must be invoked from the project root.
+
+    WARNING: these scripts use psycopg2 (libpq wrapper) to interact with
+    Postgres. Different versions of Postgres potentially use different libpqs,
+    so we probably should add automatic recompilation of psycopg2 while testing.
+    Right now we just set LD_LIBRARY_PATH to pginst_dir/lib, so it would fail
+    if libpqs are incompatible.
     """)
     parser.add_argument("--rc", default="runconf.json",
                         help="json file with configs to test, see runconf.json.example")
