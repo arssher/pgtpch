@@ -35,6 +35,8 @@ directory.
 run.sh runs the queries. It is kind of deprecated, run.py should be used instead.
 
 run.py tests multiple configurations. See its help and pgtpch.conf.example
-for details.
+for details. Usually I run it like
+
+nohup ./run.py > logs/`date "+%Y-%m-%d-%H-%M"`.out &
 
 Tested only on GNU/Linux, Ubuntu 14.04 and OpenSuse 42.2

@@ -16,4 +16,7 @@ dbgen
 qgen
 
 *.log
+*.out
+precmd*.sql
+
 __pycache__/
