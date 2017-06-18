@@ -324,8 +324,11 @@ class PerfRunner(StandardRunner):
         sudo[kill["-2", self.perf_popen.pid]]()
         self.perf_popen.wait()
         self.log("Perf record stopped")
-        if (self.pc.get("flamegraph") is not None and self.pc["flamegraph"] == "true"):
-            self.generate_flamegraph(runnum)
+        if (self.pc.get("perfscript") == "true" or self.pc.get("flamegraph") == "true"):
+            self.generate_perfscript(runnum)
+            if (self.pc.get("flamegraph") == "true"):
+                self.generate_flamegraph(runnum)
+
 
     # close perf log
     def conn_closed_hook(self):
@@ -346,6 +349,19 @@ class PerfRunner(StandardRunner):
     def get_perfdata_path(self, runnum):
         return os.path.join(self.get_res_dir(), "perf-{}.data".format(runnum))
 
+    # run perf script and put it to out-<runnum>.perf-script
+    def generate_perfscript(self, runnum):
+        fl_log = os.path.join(self.get_res_dir(), "fg_log.txt")
+        perfdata = self.get_perfdata_path(runnum)
+
+        (sudo[chown[getpass.getuser(), perfdata]])()
+        cmd = (perf["script", "-i", perfdata] > "out-{0}.perf-script".format(runnum))
+        self.log("Running {}".format(cmd))
+        # seemingly plumbum doesn't allows to append-redirect stderr to file,
+        # so we will capture it and send to log manually
+        retcode, out, script_stderr = cmd.run(retcode=None)
+        (echo[script_stderr] >> fl_log)()
+
     # generate flamegraph and put it to <query>-<runnum>.svg
     def generate_flamegraph(self, runnum):
         fl_log = os.path.join(self.get_res_dir(), "fg_log.txt")
@@ -355,24 +371,15 @@ class PerfRunner(StandardRunner):
         perfdata = self.get_perfdata_path(runnum)
         folded = "out.perf-folded"
 
-        if (self.pc.get("perf_map_files") is not None and self.pc["perf_map_files"] == "true"):
-            # without this you will probably get
-            # "File /tmp/perf-24443.map not owned by current user or root, ignoring it"
-            (sudo[chown["root", glob('/tmp/perf-*.map')]])()
-
-        fold = sudo[perf["script", "-i", perfdata]] | local[st_pl] > folded
+        fold = cat["out-{0}.perf-script".format(runnum)] | local[st_pl] > folded
         self.log("Running {}".format(fold))
         # seemingly plumbum doesn't allows to append-redirect stderr to file,
         # so we will capture it and send to log manually
         retcode, out, fold_stderr = fold.run(retcode=None)
         (echo[fold_stderr] >> fl_log)()
 
-        if (self.pc.get("perf_map_files") is not None and self.pc["perf_map_files"] == "true"):
-            # llvm jit will reuse them
-            (sudo[chown[getpass.getuser(), glob('/tmp/perf-*.map')]])()
-
         # remove perf.data, if needed
-        if (self.pc.get("rmperfdata") is not None and self.pc["rmperfdata"] == "true"):
+        if (self.pc.get("rmperfdata")  == "true"):
             rm("-f", perfdata)
         if retcode != 0:
             self.log("stackcollapse-perf failed, check out fg_log.txt")

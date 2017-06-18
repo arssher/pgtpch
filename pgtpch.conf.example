@@ -112,11 +112,6 @@ fg_path = /home/ars/FlameGraph
 # remove perf data after generating flamegraphs
 rmperfdata = true
 
-# this option turns on dirty hack for profiling jit: it will chown root all
-# /tmp/perf-*.map files while drawing flamegraphs and chown `whoami` them back
-# after again
-# perf_map_files = true
-
 # 'timerruns' runner specific options. Not implemented yet.
 
 # Number of timer runs after normal run to record timer stats
